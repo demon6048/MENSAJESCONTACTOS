@@ -1,1201 +1,1736 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KGB Streaming - CRM 3D</title>
+    <title>CRM Contactos Técnicos</title>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- PapaParse para CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        kgbDark: '#070B14',
-                        kgbPanel: '#111827', 
-                        kgbGold: '#D4AF37',
-                        kgbGoldHover: '#F3C943'
+                        dark: '#0B1120',
+                        gold: '#D4AF37',
+                        gold_hover: '#F3D266',
+                        panel: 'rgba(255, 255, 255, 0.05)',
+                        panel_border: 'rgba(255, 255, 255, 0.1)',
                     },
                     boxShadow: {
-                        '3d': '0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 10px rgba(212, 175, 55, 0.1) inset',
-                        'btn': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                        'gold': '0 4px 14px 0 rgba(212, 175, 55, 0.39)',
                     }
                 }
             }
         }
     </script>
+
     <style>
-        /* Tipografía y fondos globales */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        
         body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1a233a 0%, #070B14 100%);
-            color: #e5e7eb;
+            background-color: #0B1120;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Prevent body scroll, manage in content area */
         }
 
-        /* Utilidades Glassmorphism y 3D */
         .glass-panel {
-            background: rgba(17, 24, 39, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: var(--tw-shadow-3d);
+            background: rgba(17, 25, 40, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .input-3d {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
+        .glass-panel:hover {
+            box-shadow: 0 8px 32px 0 rgba(212, 175, 55, 0.1);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-            transition: all 0.3s;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
         }
-        .input-3d:focus {
-            border-color: #D4AF37;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(212,175,55,0.3);
+
+        .glass-input:focus {
             outline: none;
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
         }
 
-        /* Scrollbar estilizado */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
-
-        /* Icono de Calendario en Dark Mode */
-        ::-webkit-calendar-picker-indicator {
-            filter: invert(0.8) sepia(1) hue-rotate(5deg) saturate(3);
-            cursor: pointer;
-            width: 20px;
-            height: 20px;
+        .glass-button {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(184, 134, 11, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 14px 0 rgba(212, 175, 55, 0.2);
         }
 
-        /* Navegación y Tab control */
-        .tab-content { display: none; animation: fadeIn 0.4s ease-out forwards; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(212, 175, 55, 0.4);
+            background: linear-gradient(135deg, rgba(243, 210, 102, 0.9) 0%, rgba(212, 175, 55, 0.9) 100%);
+        }
 
-        .nav-link.active {
-            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15) 0%, transparent 100%);
-            border-left: 4px solid #D4AF37;
+        .glass-button-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .glass-button-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 175, 55, 0.8);
+        }
+
+        /* Sidebar active link */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(212,175,55,0.2) 0%, transparent 100%);
+            border-left: 3px solid #D4AF37;
             color: #D4AF37;
         }
 
+        /* Tables */
+        .glass-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .glass-table th {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            text-align: left;
+            font-size: 0.875rem;
+            color: #a1a1aa;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .glass-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+        .glass-table tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* 3D Status Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .badge-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .badge-yellow { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .badge-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .badge-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .badge-gray { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+
         /* Loader */
-        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #D4AF37; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #D4AF37;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Badges de Estado */
-        .status-recien { background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
-        .status-activo { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }
-        .status-porvencer { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }
-        .status-vencido { background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+        /* Hide elements */
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex h-screen w-full">
 
-    <!-- Pantalla de Carga Global -->
-    <div id="loader" class="fixed inset-0 bg-kgbDark z-[100] flex flex-col justify-center items-center backdrop-blur-md">
-        <div class="spinner mb-4"></div>
-        <p class="text-kgbGold font-bold tracking-widest text-lg drop-shadow-md">INICIANDO SISTEMA...</p>
+    <!-- Global Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 z-50 flex flex-col justify-center items-center hidden backdrop-blur-sm">
+        <div class="loader mb-4" style="width: 50px; height: 50px; border-width: 4px;"></div>
+        <p class="text-gold font-semibold animate-pulse" id="loaderText">Cargando...</p>
     </div>
 
-    <!-- Contenedor Toasts -->
-    <div id="toast-box" class="fixed top-5 right-5 z-50 flex flex-col gap-3"></div>
-
-    <!-- Menú Lateral -->
-    <aside class="w-72 glass-panel border-r border-gray-800 flex flex-col h-full hidden md:flex z-20 shadow-2xl relative">
-        <div class="p-6 flex items-center gap-4 border-b border-gray-800 bg-black/20">
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-kgbGold to-yellow-700 flex items-center justify-center shadow-btn">
-                <i class="fa-solid fa-crown text-black text-xl"></i>
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0 glass-panel border-l-0 border-t-0 border-b-0 rounded-none flex flex-col relative z-20">
+        <div class="p-6 flex items-center gap-3 border-b border-white/10">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center shadow-gold">
+                <i class="fa-solid fa-microchip text-dark text-xl"></i>
             </div>
             <div>
-                <h1 class="text-xl font-extrabold text-white tracking-wide" id="ui-brand-name">KGB CRM</h1>
-                <p class="text-xs text-kgbGold">Gestión Élite</p>
+                <h1 class="font-bold text-lg leading-tight tracking-wide">CRM<br><span class="text-gold text-sm">Contactos Técnicos</span></h1>
             </div>
         </div>
         
-        <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
-            <p class="px-4 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-2">Principal</p>
-            <button onclick="nav('dashboard')" class="nav-link active w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-layer-group w-5 text-center"></i> Dashboard
-            </button>
-            <button onclick="nav('clientes')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-users w-5 text-center"></i> Clientes
-            </button>
-            <button onclick="nav('mensajes')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-brands fa-whatsapp w-5 text-center text-green-400"></i> Enviar Mensajes
-            </button>
-            
-            <p class="px-4 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-6">Administración</p>
-            <button onclick="nav('vendedores')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-user-secret w-5 text-center"></i> Vendedores
-            </button>
-            <button onclick="nav('plataformas')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-clapperboard w-5 text-center"></i> Plataformas
-            </button>
-            <button onclick="nav('historial')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Historial
-            </button>
-            <button onclick="nav('configuracion')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
-                <i class="fa-solid fa-gear w-5 text-center"></i> Configuración
-            </button>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-3" id="mainNav">
+                <li><a href="#" onclick="app.navigate('dashboard')" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard</a></li>
+                <li><a href="#" onclick="app.navigate('import')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-file-import w-5 text-center"></i> Importar CSV</a></li>
+                <li><a href="#" onclick="app.navigate('contacts')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-users w-5 text-center"></i> Contactos</a></li>
+                <li><a href="#" onclick="app.navigate('messages')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-brands fa-whatsapp w-5 text-center"></i> Generar Mensaje</a></li>
+                <li class="my-2 border-t border-white/5"></li>
+                <li><a href="#" onclick="app.navigate('services')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-tools w-5 text-center"></i> Servicios</a></li>
+                <li><a href="#" onclick="app.navigate('templates')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-scroll w-5 text-center"></i> Plantillas</a></li>
+                <li><a href="#" onclick="app.navigate('history')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Historial</a></li>
+                <li><a href="#" onclick="app.navigate('config')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-gear w-5 text-center"></i> Configuración</a></li>
+            </ul>
         </nav>
+        
+        <div class="p-4 border-t border-white/10 text-xs text-center text-gray-500">
+            <span id="connectionStatus" class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>
+            Modo: <span id="modeLabel">Demo Local</span>
+        </div>
     </aside>
 
-    <!-- Header Móvil -->
-    <header class="md:hidden glass-panel p-4 flex justify-between items-center fixed top-0 w-full z-30 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid fa-crown text-kgbGold"></i>
-            <span class="font-bold text-white">KGB CRM</span>
-        </div>
-        <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute');" class="text-white text-xl"><i class="fa-solid fa-bars"></i></button>
-    </header>
-
-    <!-- Contenido Principal -->
-    <main class="flex-1 overflow-y-auto p-4 pb-28 md:p-8 md:pb-8 pt-20 md:pt-8 relative">
-        
-        <!-- ================= DASHBOARD ================= -->
-        <section id="dashboard" class="tab-content active max-w-7xl mx-auto">
-            <div class="flex justify-between items-end mb-8">
-                <div>
-                    <h2 class="text-4xl font-extrabold text-white mb-1">Visión General</h2>
-                    <p class="text-gray-400">Panel de control de cuentas y vencimientos.</p>
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- Header -->
+        <header class="h-16 flex-shrink-0 glass-panel border-x-0 border-t-0 rounded-none flex items-center justify-between px-6 z-10">
+            <h2 id="pageTitle" class="text-xl font-semibold text-gold">Dashboard</h2>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400" id="headerBusinessName">Cargando...</span>
+                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                    <i class="fa-solid fa-user text-sm"></i>
                 </div>
             </div>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <div class="flex-1 overflow-y-auto p-6" id="contentArea">
             
-            <!-- Cards 3D -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="flex flex-col gap-6 h-full pb-6">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 flex-shrink-0">
+                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                        <div>
+                            <p class="text-sm text-gray-400 font-medium mb-2">Total Contactos</p>
+                            <h3 class="text-3xl font-bold text-white" id="dashTotalContacts">0</h3>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                        <div>
+                            <p class="text-sm text-gray-400 font-medium mb-2">Mensajes (Hoy)</p>
+                            <h3 class="text-3xl font-bold text-white" id="dashMsgsToday">0</h3>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center text-2xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                        <div>
+                            <p class="text-sm text-gray-400 font-medium mb-2">Sin Servicio</p>
+                            <h3 class="text-3xl font-bold text-white" id="dashNoService">0</h3>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center text-2xl border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                        <div>
+                            <p class="text-sm text-gray-400 font-medium mb-2">Pendientes</p>
+                            <h3 class="text-3xl font-bold text-white" id="dashPendingMsg">0</h3>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center text-2xl border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[350px]">
+                    <!-- Recent Contacts -->
+                    <div class="glass-panel p-6 flex flex-col h-full">
+                        <div class="flex justify-between items-center mb-5 flex-shrink-0">
+                            <h3 class="font-semibold text-lg text-gold flex items-center"><i class="fa-solid fa-user-plus mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Importados</h3>
+                            <button onclick="app.navigate('contacts')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors">Ver todos</button>
+                        </div>
+                        <div class="overflow-y-auto flex-1 pr-2">
+                            <table class="glass-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>WhatsApp</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashRecentContactsTable">
+                                    <tr><td colspan="3" class="text-center text-gray-500 py-4">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Messages -->
+                    <div class="glass-panel p-6 flex flex-col h-full">
+                        <div class="flex justify-between items-center mb-5 flex-shrink-0">
+                            <h3 class="font-semibold text-lg text-gold flex items-center"><i class="fa-solid fa-paper-plane mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Mensajes</h3>
+                            <button onclick="app.navigate('history')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors">Ver historial</button>
+                        </div>
+                        <div class="overflow-y-auto flex-1 pr-2">
+                            <table class="glass-table">
+                                <thead>
+                                    <tr>
+                                        <th>Contacto</th>
+                                        <th>Tipo</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashRecentMessagesTable">
+                                    <tr><td colspan="3" class="text-center text-gray-500 py-4">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: IMPORT CSV -->
+            <div id="view-import" class="hidden h-full flex flex-col">
+                <div class="glass-panel p-6 mb-6 flex-shrink-0">
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold mb-2">Importar desde Google Contacts</h3>
+                            <p class="text-sm text-gray-400 mb-4">Seleccione un archivo CSV exportado directamente desde Google Contacts. El sistema detectará automáticamente los números de teléfono, limpiará formatos y añadirá el código de país (51 para Perú) si es necesario.</p>
+                            
+                            <div class="flex items-center gap-4">
+                                <label class="glass-button cursor-pointer inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-file-csv"></i> Seleccionar Archivo
+                                    <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importModule.handleFileSelect(event)">
+                                </label>
+                                <span id="fileNameDisplay" class="text-sm text-gray-400">Ningún archivo seleccionado</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-col sm:flex-row">
+                            <button class="glass-button-secondary rounded-lg px-4 py-2 flex items-center gap-2" onclick="importModule.downloadTemplate()">
+                                <i class="fa-solid fa-download"></i> CSV Ejemplo
+                            </button>
+                            <button class="glass-button rounded-lg px-4 py-2 flex items-center gap-2 opacity-50 cursor-not-allowed" id="btnProcessImport" onclick="importModule.processImport()" disabled>
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Importar Datos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel flex-1 flex flex-col overflow-hidden hidden" id="importPreviewContainer">
+                    <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
+                        <h3 class="font-semibold text-gold">Vista Previa de Datos <span id="previewCount" class="text-sm text-white bg-white/20 px-2 rounded-full ml-2">0</span></h3>
+                        <div class="flex gap-4 text-sm">
+                            <span class="text-green-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countNew">0</span> Nuevos</span>
+                            <span class="text-yellow-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countUpdate">0</span> Actualizar</span>
+                            <span class="text-red-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countNoNum">0</span> Sin Número</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-auto">
+                        <table class="glass-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Nombre Completo</th>
+                                    <th>WhatsApp Principal</th>
+                                    <th>Empresa</th>
+                                    <th>Estado Importación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewTable">
+                                <!-- Filas de preview generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: CONTACTS -->
+            <div id="view-contacts" class="hidden h-full flex flex-col">
+                <div class="glass-panel p-4 mb-4 flex-shrink-0 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex gap-2 flex-wrap items-center">
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="searchContacts" placeholder="Buscar nombre, número..." class="glass-input pl-10 w-64 text-sm" onkeyup="contactsModule.filter()">
+                        </div>
+                        <select id="filterState" class="glass-input w-40 text-sm" onchange="contactsModule.filter()">
+                            <option value="">Todos los Estados</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Contactado">Contactado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Sin WhatsApp">Sin WhatsApp</option>
+                        </select>
+                        <select id="filterService" class="glass-input w-48 text-sm" onchange="contactsModule.filter()">
+                            <option value="">Cualquier Servicio</option>
+                            <!-- Services populated via JS -->
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="glass-button-secondary flex items-center gap-2 text-sm" onclick="contactsModule.exportCSV()">
+                            <i class="fa-solid fa-file-export"></i> Exportar CSV
+                        </button>
+                        <button class="glass-button flex items-center gap-2 text-sm" onclick="contactsModule.openModal()">
+                            <i class="fa-solid fa-plus"></i> Nuevo Contacto
+                        </button>
+                    </div>
+                </div>
                 
-                <div onclick="abrirModalDashboard('Activos')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden">
-                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/10 rounded-full blur-xl group-hover:bg-green-500/20 transition-all"></div>
-                    <div class="flex justify-between items-center mb-4 relative">
-                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Activos</p>
-                        <i class="fa-solid fa-shield-check text-green-400 text-2xl drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]"></i>
-                    </div>
-                    <p class="text-4xl font-black text-white" id="dash-activos">0</p>
-                </div>
-
-                <div onclick="abrirModalDashboard('Por Vencer')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden border-b-2 border-orange-500/50">
-                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition-all"></div>
-                    <div class="flex justify-between items-center mb-4 relative">
-                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Por vencer (≤3d)</p>
-                        <i class="fa-solid fa-triangle-exclamation text-orange-400 text-2xl drop-shadow-[0_0_10px_rgba(251,146,60,0.5)]"></i>
-                    </div>
-                    <p class="text-4xl font-black text-white" id="dash-porvencer">0</p>
-                </div>
-
-                <div onclick="abrirModalDashboard('Vencidos')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden border-b-2 border-red-500/50">
-                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all"></div>
-                    <div class="flex justify-between items-center mb-4 relative">
-                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Vencidos</p>
-                        <i class="fa-solid fa-circle-xmark text-red-500 text-2xl drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]"></i>
-                    </div>
-                    <p class="text-4xl font-black text-white" id="dash-vencidos">0</p>
-                </div>
-
-                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Estadísticas</p>
-                        <i class="fa-solid fa-chart-line text-blue-400 text-2xl"></i>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <div class="flex justify-between text-sm"><span class="text-gray-400">Total Clientes:</span> <span class="font-bold text-white" id="dash-total">0</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-gray-400">Vendedores:</span> <span class="font-bold text-white" id="dash-vendedores">0</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-gray-400">Plataformas:</span> <span class="font-bold text-white" id="dash-plataformas">0</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tablas Dashboard -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Por Vencer Rápidos -->
-                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-gray-800 bg-black/20 flex justify-between items-center">
-                        <h3 class="font-bold text-white"><i class="fa-solid fa-fire text-orange-500 mr-2"></i> Próximos Vencimientos</h3>
-                        <button onclick="nav('clientes')" class="text-xs text-kgbGold hover:underline">Ver todos</button>
-                    </div>
-                    <div class="overflow-x-auto p-0 flex-1">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-black/40 text-gray-400 text-xs uppercase">
-                                <tr><th class="p-4">Cliente</th><th class="p-4">Plataforma</th><th class="p-4 text-right">Días</th></tr>
+                <div class="glass-panel flex-1 overflow-hidden flex flex-col">
+                    <div class="flex-1 overflow-auto">
+                        <table class="glass-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Contacto</th>
+                                    <th>WhatsApp</th>
+                                    <th>Servicio Asignado</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
                             </thead>
-                            <tbody id="tbl-dash-vencer" class="divide-y divide-gray-800">
-                                <!-- Dinámico -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Últimos registrados -->
-                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-gray-800 bg-black/20">
-                        <h3 class="font-bold text-white"><i class="fa-solid fa-user-plus text-blue-400 mr-2"></i> Últimos Clientes</h3>
-                    </div>
-                    <div class="overflow-x-auto p-0 flex-1">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-black/40 text-gray-400 text-xs uppercase">
-                                <tr><th class="p-4">Cliente</th><th class="p-4">Registro</th><th class="p-4 text-right">Estado</th></tr>
-                            </thead>
-                            <tbody id="tbl-dash-nuevos" class="divide-y divide-gray-800">
-                                <!-- Dinámico -->
+                            <tbody id="contactsTableBody">
+                                <!-- Filas generadas por JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- ================= CLIENTES ================= -->
-        <section id="clientes" class="tab-content max-w-full mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-4xl font-extrabold text-white mb-1">Cartera de Clientes</h2>
-                    <p class="text-gray-400">Gestión de cuentas y licencias.</p>
+            <!-- VIEW: MESSAGES (Generador) -->
+            <div id="view-messages" class="hidden h-full">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+                    
+                    <!-- Left: Form -->
+                    <div class="lg:col-span-5 flex flex-col gap-4 overflow-y-auto pr-2 pb-10">
+                        
+                        <!-- Select Contact -->
+                        <div class="glass-panel p-5">
+                            <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-user mr-2"></i>1. Seleccionar Contacto</label>
+                            <div class="relative">
+                                <input type="text" id="msgSearchContact" placeholder="Buscar contacto..." class="glass-input mb-2" onkeyup="messagesModule.filterContactsDropdown()" autocomplete="off">
+                                <div id="msgContactDropdown" class="absolute z-30 w-full glass-panel max-h-48 overflow-y-auto hidden">
+                                    <!-- Options generated by JS -->
+                                </div>
+                            </div>
+                            
+                            <div id="msgSelectedContactCard" class="mt-3 p-3 bg-white/5 border border-white/10 rounded-lg hidden relative">
+                                <button onclick="messagesModule.clearContact()" class="absolute top-2 right-2 text-gray-400 hover:text-red-400"><i class="fa-solid fa-times"></i></button>
+                                <h4 id="msgCardName" class="font-bold text-white">Nombre</h4>
+                                <p id="msgCardPhone" class="text-sm text-gray-400">Phone</p>
+                                <div class="mt-2 text-xs">
+                                    <span class="text-gold">Servicio actual:</span> <span id="msgCardService" class="text-gray-300">Ninguno</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Select Intent / Template -->
+                        <div class="glass-panel p-5">
+                            <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-lightbulb mr-2"></i>2. Intención y Plantilla</label>
+                            
+                            <select id="msgIntentSelect" class="glass-input mb-3" onchange="messagesModule.filterTemplates()">
+                                <option value="">-- Seleccionar Categoría --</option>
+                                <option value="Cambio de número">Avisar cambio de número</option>
+                                <option value="Impresoras">Impresoras</option>
+                                <option value="Computadoras y Laptops">Computadoras y Laptops</option>
+                                <option value="Cámaras y Redes">Cámaras y Redes</option>
+                                <option value="General">Soporte General / Otros</option>
+                            </select>
+
+                            <select id="msgTemplateSelect" class="glass-input" onchange="messagesModule.generatePreview()">
+                                <option value="">-- Seleccionar Plantilla --</option>
+                                <!-- Templates generated by JS -->
+                            </select>
+                        </div>
+                        
+                        <!-- Manual Service Override -->
+                        <div class="glass-panel p-5">
+                             <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-tools mr-2"></i>3. Servicio a Mencionar (Opcional)</label>
+                             <select id="msgServiceSelect" class="glass-input text-sm" onchange="messagesModule.generatePreview()">
+                                <option value="">Usar servicio asignado al contacto</option>
+                                <!-- Services generated by JS -->
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- Right: Preview & Actions -->
+                    <div class="lg:col-span-7 flex flex-col gap-4 h-full">
+                        <div class="glass-panel p-5 flex-1 flex flex-col relative overflow-hidden">
+                            <!-- WhatsApp Background pattern -->
+                            <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: url('https://w0.peakpx.com/wallpaper/818/148/HD-wallpaper-whatsapp-background-solid-color-dark.jpg'); background-size: cover;"></div>
+                            
+                            <div class="relative z-10 flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+                                <h3 class="font-semibold text-green-400"><i class="fa-brands fa-whatsapp mr-2"></i>Vista Previa del Mensaje</h3>
+                                <div class="flex gap-2">
+                                    <button class="text-xs glass-button-secondary px-2 py-1 rounded" onclick="messagesModule.copyText()"><i class="fa-regular fa-copy"></i> Copiar</button>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 bg-[#0b141a] rounded-lg p-4 overflow-y-auto shadow-inner relative border border-white/5">
+                                <div class="bg-[#005c4b] text-white p-3 rounded-lg rounded-tr-none max-w-[90%] ml-auto text-sm shadow whitespace-pre-wrap font-sans relative" id="msgPreviewBox">
+Seleccione un contacto y una plantilla para generar el mensaje.
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-white/10 flex flex-col sm:flex-row gap-3 justify-end relative z-10">
+                                <button class="glass-button-secondary rounded-lg px-4 py-2" onclick="messagesModule.markAsSentManually()" id="btnMarkSent" disabled>
+                                    <i class="fa-solid fa-check-double text-blue-400"></i> Registrar como enviado (sin abrir web)
+                                </button>
+                                <button class="glass-button bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-6 py-2 shadow-green-500/50 border-green-400/50" onclick="messagesModule.openWhatsApp()" id="btnOpenWhatsApp" disabled>
+                                    <i class="fa-brands fa-whatsapp text-lg mr-1"></i> Abrir WhatsApp y Enviar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="abrirModalCliente()" class="bg-gradient-to-r from-kgbGold to-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow-btn hover:scale-105 transition-transform flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus"></i> Nuevo Cliente
-                </button>
             </div>
 
-            <!-- Filtros Glass -->
-            <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row gap-4 items-center border border-gray-700">
-                <div class="relative flex-1 w-full">
-                    <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-500"></i>
-                    <input type="text" id="filtro-buscar" onkeyup="renderClientes()" placeholder="Buscar por nombre, número o vendedor..." class="w-full pl-11 p-3 rounded-lg input-3d">
+            <!-- VIEW: SERVICES -->
+            <div id="view-services" class="hidden h-full flex flex-col">
+                <div class="glass-panel p-4 mb-4 flex-shrink-0 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gold">Gestión de Servicios</h3>
+                    <button class="glass-button flex items-center gap-2 text-sm" onclick="servicesModule.openModal()">
+                        <i class="fa-solid fa-plus"></i> Nuevo Servicio
+                    </button>
                 </div>
-                <select id="filtro-estado" onchange="renderClientes()" class="p-3 rounded-lg input-3d w-full md:w-48 appearance-none">
-                    <option value="Todos">Todos los estados</option>
-                    <option value="Recién comprado">Recién comprados</option>
-                    <option value="Activo">Activos</option>
-                    <option value="Por Vencer">Por Vencer</option>
-                    <option value="Vencido">Vencidos</option>
-                </select>
-                <select id="filtro-plataforma" onchange="renderClientes()" class="p-3 rounded-lg input-3d w-full md:w-48 appearance-none">
-                    <option value="Todas">Todas las Plat.</option>
-                    <!-- Dinámico -->
-                </select>
-            </div>
-
-            <div class="glass-panel rounded-2xl overflow-hidden shadow-3d">
-                <div class="overflow-x-auto min-h-[400px]">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-black/60 text-kgbGold text-xs uppercase tracking-widest">
+                <div class="glass-panel flex-1 overflow-auto">
+                    <table class="glass-table w-full">
+                        <thead>
                             <tr>
-                                <th class="p-4 border-b border-gray-800">Cliente / WA</th>
-                                <th class="p-4 border-b border-gray-800">Plataforma</th>
-                                <th class="p-4 border-b border-gray-800">Vendedor</th>
-                                <th class="p-4 border-b border-gray-800">Vencimiento</th>
-                                <th class="p-4 border-b border-gray-800 text-center">Estado</th>
-                                <th class="p-4 border-b border-gray-800 text-center">Acciones</th>
+                                <th>Servicio</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th class="text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tbl-clientes" class="divide-y divide-gray-800/50">
-                            <!-- Dinámico -->
+                        <tbody id="servicesTableBody">
+                            <!-- JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
 
-        <!-- ================= ENVIAR MENSAJES ================= -->
-        <section id="mensajes" class="tab-content max-w-6xl mx-auto">
-            <h2 class="text-4xl font-extrabold text-white mb-2">Mensajería Inteligente</h2>
-            <p class="text-gray-400 mb-8">Prepara envíos manuales a WhatsApp codificados con los datos del cliente.</p>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Configurador -->
-                <div class="glass-panel p-6 rounded-2xl shadow-3d space-y-6">
-                    <div>
-                        <label class="block text-sm font-bold text-kgbGold mb-2"><i class="fa-solid fa-user-tag mr-2"></i>1. Seleccionar Cliente</label>
-                        <select id="msg-cliente" onchange="onMsgClienteChange()" class="w-full p-3 rounded-lg input-3d">
-                            <option value="">-- Buscar cliente --</option>
-                            <!-- Dinámico -->
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-kgbGold mb-2">Vendedor asignado</label>
-                            <select id="msg-vendedor" onchange="generarPrevisualizacion()" class="w-full p-3 rounded-lg input-3d opacity-80">
-                                <option value="SIN_VENDEDOR">Sin Vendedor</option>
-                                <!-- Dinámico -->
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-kgbGold mb-2">Filtro de Plantillas</label>
-                            <select id="msg-tipo" onchange="cargarPlantillasXtipo()" class="w-full p-3 rounded-lg input-3d">
-                                <option value="TODOS">-- Mostrar Todas --</option>
-                                <option value="vencimiento_cambio_numero">Vencimiento + Cambio Nro</option>
-                                <option value="solo_cambio_numero">Solo Cambio Número</option>
-                                <option value="invitacion_compra">Invitación Compra</option>
-                                <option value="cliente_sin_nombre">Sin Nombre</option>
-                                <option value="cliente_sin_vendedor">Sin Vendedor</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-sm font-bold text-kgbGold">2. Plantilla (Variación)</label>
-                            <button onclick="seleccionarPlantillaAleatoria()" class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-white transition"><i class="fa-solid fa-dice mr-1"></i> Aleatoria</button>
-                        </div>
-                        <select id="msg-plantilla" onchange="generarPrevisualizacion()" class="w-full p-3 rounded-lg input-3d">
-                            <!-- Dinámico -->
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-kgbGold mb-2">3. Editor Manual (Opcional)</label>
-                        <textarea id="msg-textarea" onkeyup="updatePreviewFromTextarea()" class="w-full p-3 rounded-lg input-3d font-mono text-sm leading-relaxed min-h-[100px] md:min-h-[150px]" placeholder="El mensaje aparecerá aquí para ediciones de última hora..."></textarea>
+            <!-- VIEW: TEMPLATES -->
+            <div id="view-templates" class="hidden h-full flex flex-col">
+                <div class="glass-panel p-4 mb-4 flex-shrink-0 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gold">Plantillas de Mensajes</h3>
+                    <button class="glass-button flex items-center gap-2 text-sm" onclick="templatesModule.openModal()">
+                        <i class="fa-solid fa-plus"></i> Nueva Plantilla
+                    </button>
+                </div>
+                <div class="glass-panel flex-1 overflow-auto p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="templatesGrid">
+                        <!-- JS -->
                     </div>
                 </div>
+            </div>
 
-                <!-- Preview y Envío -->
-                <div class="flex flex-col gap-6 h-full">
-                    <div class="glass-panel p-6 rounded-2xl flex-1 shadow-3d border border-green-500/30 relative overflow-hidden">
-                        <div class="absolute -right-10 -bottom-10 opacity-5 text-[150px]"><i class="fa-brands fa-whatsapp"></i></div>
-                        <h3 class="font-bold text-green-400 mb-4 border-b border-gray-700 pb-2"><i class="fa-solid fa-eye mr-2"></i> Vista Previa Final</h3>
+            <!-- VIEW: HISTORY -->
+            <div id="view-history" class="hidden h-full flex flex-col">
+                <div class="glass-panel p-4 mb-4 flex-shrink-0">
+                    <h3 class="text-lg font-semibold text-gold mb-3">Historial de Mensajes Enviados</h3>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchHistory" placeholder="Buscar en historial..." class="glass-input pl-10 max-w-md text-sm" onkeyup="historyModule.filter()">
+                    </div>
+                </div>
+                <div class="glass-panel flex-1 overflow-auto">
+                    <table class="glass-table w-full">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Contacto</th>
+                                <th>WhatsApp</th>
+                                <th>Plantilla</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: CONFIG -->
+            <div id="view-config" class="hidden h-full overflow-y-auto pb-10">
+                <div class="max-w-3xl mx-auto glass-panel p-8">
+                    <h2 class="text-2xl font-bold text-gold mb-6 border-b border-white/10 pb-4"><i class="fa-solid fa-gears mr-3"></i>Configuración General</h2>
+                    
+                    <form id="configForm" onsubmit="configModule.save(event)">
                         
-                        <!-- Burbuja WA -->
-                        <div class="bg-[#d9fdd3] text-[#111b21] p-4 rounded-xl rounded-tl-none relative shadow-md mt-4 max-w-[95%]">
-                            <div class="absolute -left-3 top-0 w-0 h-0 border-t-[15px] border-t-[#d9fdd3] border-l-[15px] border-l-transparent"></div>
-                            <p id="msg-preview-html" class="whitespace-pre-wrap text-[15px] leading-snug font-sans">Selecciona un cliente para generar el mensaje.</p>
-                            <p class="text-[10px] text-gray-500 text-right mt-1" id="msg-preview-time">12:00 PM</p>
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Datos del Negocio</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Nombre del Negocio</label>
+                                    <input type="text" id="cfg_nombre_negocio" class="glass-input opacity-70 cursor-not-allowed" readonly required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Nombre del Responsable</label>
+                                    <input type="text" id="cfg_responsable" class="glass-input" required>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm text-gray-400 mb-1">Firma en Mensajes</label>
+                                    <input type="text" id="cfg_firma" class="glass-input" placeholder="Ej: Atentamente, José - Soporte Técnico">
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="flex flex-col gap-3">
-                        <button id="btn-wa" onclick="abrirWA()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-black py-4 rounded-xl shadow-btn hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fa-brands fa-whatsapp text-2xl"></i> ABRIR WHATSAPP
-                        </button>
-                        <div class="grid grid-cols-2 gap-3 w-full">
-                            <button onclick="copiarMensaje()" class="glass-panel text-white py-3 rounded-xl hover:bg-white/10 transition font-bold flex justify-center items-center text-sm"><i class="fa-regular fa-copy mr-2"></i> Copiar</button>
-                            <button onclick="marcarComoEnviado()" class="glass-panel text-blue-400 border border-blue-500/30 py-3 rounded-xl hover:bg-blue-500/10 transition font-bold flex justify-center items-center text-sm"><i class="fa-solid fa-check-double mr-2"></i> Registrar Envío</button>
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Números de Contacto</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1 text-red-300">Número Anterior (A eliminar)</label>
+                                    <input type="text" id="cfg_numero_anterior" class="glass-input opacity-70 cursor-not-allowed" readonly placeholder="Ej: 51999888777">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1 text-green-300">Nuevo Número Principal</label>
+                                    <input type="text" id="cfg_nuevo_numero_principal" class="glass-input opacity-70 cursor-not-allowed" readonly required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Número Secundario</label>
+                                    <input type="text" id="cfg_nuevo_numero_secundario" class="glass-input">
+                                </div>
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Medios de Pago (Opcional)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Número Yape</label>
+                                    <input type="text" id="cfg_numero_yape" class="glass-input">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Número Plin</label>
+                                    <input type="text" id="cfg_numero_plin" class="glass-input">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Cuenta Depósito</label>
+                                    <input type="text" id="cfg_numero_deposito" class="glass-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
+                            <button type="submit" class="glass-button"><i class="fa-solid fa-save mr-2"></i>Guardar Configuración</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </section>
 
-        <!-- Secciones Vendedores, Plataformas, Historial, Config -->
-        <section id="vendedores" class="tab-content max-w-5xl mx-auto">
-            <h2 class="text-4xl font-extrabold text-white mb-6">Fuerza de Ventas</h2>
-            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto">
-                <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
-                        <tr><th class="p-4">ID</th><th class="p-4">Nombre</th><th class="p-4">WhatsApp</th><th class="p-4">Estado</th></tr>
-                    </thead>
-                    <tbody id="tbl-vendedores" class="divide-y divide-gray-800"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="plataformas" class="tab-content max-w-5xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h2 class="text-4xl font-extrabold text-white mb-1">Plataformas Streaming</h2>
-                    <p class="text-gray-400">Catálogo de productos y servicios.</p>
-                </div>
-                <button onclick="abrirModalPlataforma()" class="bg-gradient-to-r from-kgbGold to-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow-btn hover:scale-105 transition-transform flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Nueva Plataforma
-                </button>
-            </div>
-            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto">
-                <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
-                        <tr><th class="p-4">ID</th><th class="p-4">Plataforma</th><th class="p-4">Estado</th><th class="p-4">Registro</th></tr>
-                    </thead>
-                    <tbody id="tbl-plataformas" class="divide-y divide-gray-800"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="historial" class="tab-content max-w-6xl mx-auto">
-            <h2 class="text-4xl font-extrabold text-white mb-6">Logs de Mensajes</h2>
-            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto min-h-[400px]">
-                <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
-                        <tr><th class="p-4">Fecha</th><th class="p-4">Cliente</th><th class="p-4">Plataforma</th><th class="p-4">Tipo</th><th class="p-4">Estado</th></tr>
-                    </thead>
-                    <tbody id="tbl-historial" class="divide-y divide-gray-800"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="configuracion" class="tab-content max-w-4xl mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-4xl font-extrabold text-white">Configuración del Core</h2>
-                <button onclick="guardarConfig()" class="bg-kgbGold text-black px-6 py-2 rounded-lg font-bold shadow-btn hover:bg-kgbGoldHover transition"><i class="fa-solid fa-save mr-2"></i> Guardar</button>
-            </div>
-            <div class="glass-panel p-8 rounded-2xl shadow-3d grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-2"><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nombre Sistema</label><input type="text" id="conf-nombre" class="w-full p-3 input-3d rounded"></div>
-                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Responsable</label><input type="text" id="conf-resp" class="w-full p-3 input-3d rounded"></div>
-                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Firma Mensajes</label><input type="text" id="conf-firma" class="w-full p-3 input-3d rounded"></div>
-                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nro Antiguo</label><input type="text" id="conf-nro_ant" placeholder="917309964" class="w-full p-3 input-3d rounded"></div>
-                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nro Nuevo Principal</label><input type="text" id="conf-nro_new" placeholder="902532240" class="w-full p-3 input-3d rounded"></div>
-            </div>
-        </section>
-
+        </div>
     </main>
 
-    <!-- Modal Acción Cliente -->
-    <div id="modal-cliente" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-panel w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300" id="modal-cliente-content">
-            <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/40 rounded-t-2xl">
-                <h3 class="text-2xl font-bold text-kgbGold"><i class="fa-solid fa-user-astronaut mr-2"></i> Ficha de Cliente</h3>
-                <button onclick="cerrarModalCliente()" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+    <!-- MODAL: Contact Form -->
+    <div id="modalContact" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gold" id="modalContactTitle">Nuevo Contacto</h3>
+                <button onclick="contactsModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            
-            <form id="form-cliente" onsubmit="event.preventDefault(); guardarCliente();" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                <input type="hidden" id="form-id">
+            <div class="p-6 overflow-y-auto">
+                <form id="formContact" onsubmit="contactsModule.save(event)">
+                    <input type="hidden" id="c_id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label class="block text-sm mb-1">Nombre</label><input type="text" id="c_nombre" class="glass-input" required></div>
+                        <div><label class="block text-sm mb-1">Apellido</label><input type="text" id="c_apellido" class="glass-input"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label class="block text-sm mb-1">WhatsApp Principal <span class="text-xs text-gray-400">(Cod. País)</span></label><input type="text" id="c_whatsapp" class="glass-input" placeholder="Ej: 51987654321" required></div>
+                        <div><label class="block text-sm mb-1">WhatsApp Secundario</label><input type="text" id="c_whatsapp2" class="glass-input"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label class="block text-sm mb-1">Empresa / Organización</label><input type="text" id="c_empresa" class="glass-input"></div>
+                        <div><label class="block text-sm mb-1">Correo</label><input type="email" id="c_correo" class="glass-input"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm mb-1">Servicio de Interés</label>
+                            <select id="c_servicio" class="glass-input">
+                                <option value="">Ninguno</option>
+                                <!-- JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">Estado</label>
+                            <select id="c_estado" class="glass-input" required>
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Contactado">Contactado</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Cliente frecuente">Cliente frecuente</option>
+                                <option value="Cliente potencial">Cliente potencial</option>
+                                <option value="Sin WhatsApp">Sin WhatsApp</option>
+                                <option value="No interesado">No interesado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm mb-1">Notas / Observación</label>
+                        <textarea id="c_observacion" class="glass-input h-20"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="contactsModule.closeModal()">Cancelar</button>
+                        <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar Contacto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Service Form -->
+    <div id="modalService" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gold" id="modalServiceTitle">Nuevo Servicio</h3>
+                <button onclick="servicesModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <form id="formService" onsubmit="servicesModule.save(event)" class="p-6">
+                <input type="hidden" id="s_id">
+                <div class="mb-4"><label class="block text-sm mb-1">Nombre del Servicio</label><input type="text" id="s_nombre" class="glass-input" required></div>
+                <div class="mb-4">
+                    <label class="block text-sm mb-1">Categoría</label>
+                    <select id="s_categoria" class="glass-input" required>
+                        <option value="Impresoras">Impresoras</option>
+                        <option value="Computadoras y Laptops">Computadoras y Laptops</option>
+                        <option value="Cámaras">Cámaras</option>
+                        <option value="Redes">Redes</option>
+                        <option value="Soporte técnico">Soporte técnico</option>
+                        <option value="Software">Software</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm mb-1">Estado</label>
+                    <select id="s_estado" class="glass-input" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="servicesModule.closeModal()">Cancelar</button>
+                    <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Template Form -->
+    <div id="modalTemplate" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gold" id="modalTemplateTitle">Editar Plantilla</h3>
+                <button onclick="templatesModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <form id="formTemplate" onsubmit="templatesModule.save(event)" class="p-6 overflow-y-auto flex-1">
+                <input type="hidden" id="t_id">
                 
-                <div class="col-span-1 md:col-span-2">
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nombre Completo</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="form-nombre" required placeholder="Nombre" class="w-1/2 p-3 input-3d rounded-lg">
-                        <input type="text" id="form-apellido" placeholder="Apellido (Opcional)" class="w-1/2 p-3 input-3d rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-sm mb-1">Nombre de Plantilla (Interno)</label><input type="text" id="t_nombre" class="glass-input" required></div>
+                    <div>
+                        <label class="block text-sm mb-1">Categoría / Tipo</label>
+                        <select id="t_categoria" class="glass-input" required>
+                            <option value="Cambio de número">Cambio de número</option>
+                            <option value="Impresoras">Impresoras</option>
+                            <option value="Computadoras y Laptops">Computadoras y Laptops</option>
+                            <option value="Cámaras y Redes">Cámaras y Redes</option>
+                            <option value="General">General / Otros</option>
+                        </select>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">WhatsApp (Números)</label>
-                    <div class="relative">
-                        <i class="fa-brands fa-whatsapp absolute left-3 top-3.5 text-green-500"></i>
-                        <input type="text" id="form-wa" required placeholder="51999888777" class="w-full pl-10 p-3 input-3d rounded-lg">
+                <div class="mb-2">
+                    <label class="block text-sm mb-1 text-gold">Contenido del Mensaje</label>
+                    <div class="text-xs text-gray-400 mb-2 flex flex-wrap gap-2">
+                        <span>Variables:</span>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nombre_contacto]')">[nombre_contacto]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[servicio]')">[servicio]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nombre_negocio]')">[nombre_negocio]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nuevo_numero_principal]')">[nuevo_numero_principal]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[numero_anterior]')">[numero_anterior]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[firma]')">[firma]</code>
+                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[numero_yape]')">[numero_yape]</code>
                     </div>
+                    <textarea id="t_contenido" class="glass-input h-64 font-sans" required></textarea>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Plataforma</label>
-                    <select id="form-plat" required class="w-full p-3 input-3d rounded-lg appearance-none">
-                        <!-- Dinamico -->
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Vendedor</label>
-                    <select id="form-vend" class="w-full p-3 input-3d rounded-lg appearance-none">
-                        <option value="SIN_VENDEDOR">Sin Vendedor</option>
-                        <!-- Dinamico -->
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Fechas de Suscripción</label>
-                    <div class="flex gap-4">
-                        <div class="w-1/2 relative group">
-                            <span class="absolute -top-2 left-2 bg-kgbDark text-gray-500 text-[10px] px-1 font-bold z-10">INICIO</span>
-                            <i class="fa-solid fa-calendar-day absolute left-3 top-3.5 text-kgbGold group-hover:scale-110 transition-transform"></i>
-                            <input type="date" id="form-inicio" required class="w-full pl-10 p-3 input-3d rounded-lg cursor-pointer text-sm">
-                        </div>
-                        <div class="w-1/2 relative group">
-                            <span class="absolute -top-2 left-2 bg-kgbDark text-gray-500 text-[10px] px-1 font-bold z-10">VENCE</span>
-                            <i class="fa-solid fa-calendar-check absolute left-3 top-3.5 text-kgbGold group-hover:scale-110 transition-transform"></i>
-                            <input type="date" id="form-vence" required class="w-full pl-10 p-3 input-3d rounded-lg cursor-pointer text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-span-1 md:col-span-2 pt-4 flex justify-end gap-4 border-t border-gray-800">
-                    <button type="button" onclick="cerrarModalCliente()" class="px-6 py-2 text-gray-400 font-bold hover:text-white transition">Cancelar</button>
-                    <button type="submit" class="bg-kgbGold text-black font-bold px-8 py-2 rounded-lg shadow-btn hover:bg-kgbGoldHover transition">
-                        Guardar Ficha
-                    </button>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="templatesModule.closeModal()">Cancelar</button>
+                    <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar Plantilla</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Dashboard Genérico -->
-    <div id="modal-dash" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center hidden">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl shadow-2xl p-6 border border-gray-700 h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-800">
-                <h3 class="text-2xl font-bold text-white" id="md-title">Detalle</h3>
-                <button onclick="document.getElementById('modal-dash').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="overflow-y-auto flex-1">
-                <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-black/60 text-kgbGold text-xs uppercase sticky top-0"><tr id="md-head"></tr></thead>
-                    <tbody id="md-body" class="divide-y divide-gray-800"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal Acción Plataforma -->
-    <div id="modal-plataforma" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300" id="modal-plataforma-content">
-            <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/40 rounded-t-2xl">
-                <h3 class="text-2xl font-bold text-kgbGold"><i class="fa-solid fa-clapperboard mr-2"></i> Nueva Plataforma</h3>
-                <button onclick="cerrarModalPlataforma()" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <form id="form-plataforma" onsubmit="event.preventDefault(); guardarPlataforma();" class="p-6 flex flex-col gap-5">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nombre de Plataforma</label>
-                    <input type="text" id="form-plat-nombre" required placeholder="Ej: Crunchyroll Premium" class="w-full p-3 input-3d rounded-lg">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Estado</label>
-                    <select id="form-plat-estado" required class="w-full p-3 input-3d rounded-lg appearance-none">
-                        <option value="activo">Activo</option>
-                        <option value="inactivo">Inactivo</option>
-                    </select>
-                </div>
-
-                <div class="pt-4 flex justify-end gap-4 border-t border-gray-800">
-                    <button type="button" onclick="cerrarModalPlataforma()" class="px-6 py-2 text-gray-400 font-bold hover:text-white transition">Cancelar</button>
-                    <button type="submit" class="bg-kgbGold text-black font-bold px-8 py-2 rounded-lg shadow-btn hover:bg-kgbGoldHover transition">
-                        Guardar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- JAVASCRIPT DEL SISTEMA CRM 3D              -->
-    <!-- ========================================== -->
     <script>
-        // ================= CONFIGURACIÓN =================
-        
-        // ESTA ES TU URL ACTUALIZADA
-        const API_URL = "https://script.google.com/macros/s/AKfycbx9eNkCko-cG5G9UPy0Wo0YE-FAt04dfFy933uM4Ol5lH_7xEWSm-72x5gnR4bMt5xAXw/exec"; 
+        /**
+         * ==========================================
+         * CONFIGURACIÓN PRINCIPAL
+         * ==========================================
+         */
+        // ¡LA URL REAL HA SIDO ASIGNADA AQUÍ!
+        const API_URL = "https://script.google.com/macros/s/AKfycbzaLWS1RTSmataZdRCFU690x4M_yKGI_y1XfhWOSdsz6WDAW3lojbZ1iBUIpzFyd2W7/exec"; 
 
-        const State = {
-            config: {},
-            vendedores: [],
-            plataformas: [],
-            clientes: [],
-            plantillas: [],
-            historial: []
+        /**
+         * ==========================================
+         * MOCK DB (Para funcionar en Canvas Preview sin backend)
+         * ==========================================
+         */
+        const isMockMode = API_URL === "PEGAR_AQUI_URL_DEL_WEB_APP_DE_GOOGLE_APPS_SCRIPT";
+        
+        let mockDB = {
+            config: {
+                nombre_negocio: "KGB distribuidores con ruc 20600094719",
+                responsable: "Administración",
+                numero_anterior: "51917309964",
+                nuevo_numero_principal: "51964355757",
+                nuevo_numero_secundario: "",
+                numero_yape: "",
+                numero_plin: "",
+                numero_deposito: "",
+                firma: "Atentamente, KGB distribuidores con ruc 20600094719"
+            },
+            services: [
+                {id: 'S1', nombre: 'Reparación de impresoras', categoria: 'Impresoras', estado: 'Activo'},
+                {id: 'S2', nombre: 'Mantenimiento de computadoras', categoria: 'Computadoras y Laptops', estado: 'Activo'},
+                {id: 'S3', nombre: 'Instalación de cámaras', categoria: 'Cámaras', estado: 'Activo'}
+            ],
+            contacts: [
+                {id: 'C1', nombre: 'Juan', apellido: 'Pérez', nombre_completo: 'Juan Pérez', whatsapp_principal: '51987123456', correo: 'juan@mail.com', empresa: '', servicio_id: 'S1', estado_contacto: 'Nuevo', fecha_registro: new Date().toISOString()}
+            ],
+            templates: [
+                {id: 'T1', nombre_plantilla: 'Cambio Num - Formal', categoria: 'Cambio de número', contenido: 'Hola, [nombre_contacto] 😊\nLe saluda [nombre_negocio].\nQueremos informarle que hemos cambiado nuestro número oficial de atención.\nDesde ahora puede comunicarse con nosotros a este nuevo número:\n*[nuevo_numero_principal]*\n\nPor favor, elimine de sus contactos el número anterior:\n~[numero_anterior]~\n\nAsí podremos seguir atendiéndole correctamente por WhatsApp.\n[firma]'},
+                {id: 'T2', nombre_plantilla: 'Impresoras - Falla', categoria: 'Impresoras', contenido: 'Hola, [nombre_contacto] 😊\nLe saluda [nombre_negocio].\nEstamos brindando servicio de *[servicio]*, ideal si su impresora presenta fallas, manchas, atascos, errores o problemas de tinta.\n\nTambién le informamos que nuestro nuevo número de atención es:\n*[nuevo_numero_principal]*\n(Por favor, elimine el número anterior: ~[numero_anterior]~)\n\nPuede escribirnos para coordinar una revisión.\n[firma]'}
+            ],
+            history: []
         };
 
-        // ================= INICIALIZACIÓN =================
-        document.addEventListener('DOMContentLoaded', () => {
-            setInterval(() => {
-                const d = new Date();
-                const timeEl = document.getElementById('msg-preview-time');
-                if(timeEl) timeEl.textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            }, 60000);
-
-            fetchData();
-        });
-
-        // ================= NAVEGACIÓN UI =================
-        function nav(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
+        /**
+         * ==========================================
+         * API SERVICE MOCK / REAL
+         * ==========================================
+         */
+        const api = {
+            async call(action, data = {}) {
+                showLoader();
+                try {
+                    if (isMockMode) {
+                        return await this.mockCall(action, data);
+                    } else {
+                        // Llamada real a GAS
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS prefiere text/plain para evitar CORS preflight
+                            body: JSON.stringify({ action: action, data: data })
+                        });
+                        const result = await response.json();
+                        if(result.status !== 'success') throw new Error(result.message || 'Error de API');
+                        hideLoader();
+                        return result.data;
+                    }
+                } catch (error) {
+                    hideLoader();
+                    console.error("API Error:", error);
+                    Swal.fire('Error', error.message, 'error');
+                    throw error;
+                }
+            },
             
-            const btn = document.querySelector(`.nav-link[onclick="nav('${tabId}')"]`);
-            if(btn) btn.classList.add('active');
-
-            if(window.innerWidth < 768) {
-                document.querySelector('aside').classList.add('hidden');
-            }
-        }
-
-        // ================= LÓGICA DE DATOS =================
-        async function fetchData() {
-            try {
-                const res = await fetch(API_URL);
-                const json = await res.json();
-                if(json.status === 'success') {
-                    Object.assign(State, json.data);
-                    procesarClientesCalc();
-                    renderAll();
-                    toast("Sistema Listo", "Datos sincronizados con Google Sheets", "success");
-                } else { throw new Error(json.message); }
-            } catch(e) {
-                toast("Error de red", "No se pudo conectar a la base de datos", "error");
-            } finally {
-                document.getElementById('loader').style.display = 'none';
-            }
-        }
-
-        async function apiPost(action, payload) {
-            document.getElementById('loader').style.display = 'flex';
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'text/plain'}, 
-                    body: JSON.stringify({action, payload})
+            // Simulación de backend para visualización inmediata
+            async mockCall(action, data) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        let resData = null;
+                        switch(action) {
+                            case 'getConfig': resData = mockDB.config; break;
+                            case 'saveConfig': mockDB.config = {...mockDB.config, ...data}; resData = true; break;
+                            case 'getServices': resData = mockDB.services; break;
+                            case 'saveService': 
+                                if(data.id) { let i = mockDB.services.findIndex(s=>s.id===data.id); if(i>-1) mockDB.services[i]=data; }
+                                else { data.id = 'S'+Date.now(); mockDB.services.push(data); }
+                                resData = true; break;
+                            case 'getContacts': resData = mockDB.contacts; break;
+                            case 'saveContact':
+                                if(!data.nombre_completo) data.nombre_completo = `${data.nombre} ${data.apellido}`.trim();
+                                if(data.id) { let i = mockDB.contacts.findIndex(c=>c.id===data.id); if(i>-1) mockDB.contacts[i]=data; }
+                                else { data.id = 'C'+Date.now(); data.fecha_registro = new Date().toISOString(); mockDB.contacts.push(data); }
+                                resData = true; break;
+                            case 'getTemplates': resData = mockDB.templates; break;
+                            case 'saveTemplate':
+                                if(data.id) { let i = mockDB.templates.findIndex(t=>t.id===data.id); if(i>-1) mockDB.templates[i]=data; }
+                                else { data.id = 'T'+Date.now(); mockDB.templates.push(data); }
+                                resData = true; break;
+                            case 'getHistory': resData = mockDB.history; break;
+                            case 'saveHistory':
+                                data.id = 'H'+Date.now(); data.fecha_hora = new Date().toLocaleString();
+                                mockDB.history.unshift(data); resData = true; break;
+                            case 'importContacts':
+                                data.forEach(c => {
+                                    c.id = 'C'+Math.random().toString(36).substr(2,9);
+                                    c.fecha_registro = new Date().toISOString();
+                                    c.estado_contacto = c.whatsapp_principal ? 'Nuevo' : 'Sin WhatsApp';
+                                    mockDB.contacts.push(c);
+                                });
+                                resData = { imported: data.length }; break;
+                            case 'getDashboard':
+                                resData = {
+                                    totalContacts: mockDB.contacts.length,
+                                    msgsToday: mockDB.history.filter(h => h.fecha_hora.includes(new Date().toLocaleDateString())).length,
+                                    noService: mockDB.contacts.filter(c => !c.servicio_id).length,
+                                    pendingMsg: mockDB.contacts.filter(c => c.estado_contacto === 'Nuevo' || c.estado_contacto === 'Pendiente').length,
+                                    recentContacts: mockDB.contacts.slice(-5).reverse(),
+                                    recentMessages: mockDB.history.slice(0, 5)
+                                };
+                                break;
+                        }
+                        hideLoader();
+                        resolve(resData);
+                    }, 500); // 500ms delay para simular red
                 });
-                const json = await res.json();
-                if(json.status === 'success') return json.data;
-                throw new Error(json.message);
-            } catch(e) {
-                toast("Error de operación", e.message, "error");
-                throw e;
-            } finally {
-                document.getElementById('loader').style.display = 'none';
             }
+        };
+
+        /**
+         * ==========================================
+         * UTILIDADES
+         * ==========================================
+         */
+        function showLoader() { document.getElementById('globalLoader').classList.remove('hidden'); }
+        function hideLoader() { document.getElementById('globalLoader').classList.add('hidden'); }
+        
+        function formatPhone(phone) {
+            if(!phone) return '';
+            let cleaned = phone.toString().replace(/\D/g, ''); // Solo números
+            if(cleaned.length === 9 && cleaned.startsWith('9')) {
+                cleaned = '51' + cleaned; // Asumir Perú
+            }
+            return cleaned;
         }
 
-        function procesarClientesCalc() {
-            const hoy = new Date();
-            hoy.setHours(0,0,0,0);
+        function getStatusBadge(status) {
+            let color = 'gray';
+            if(['Activo', 'Nuevo', 'Contactado', 'Cliente frecuente'].includes(status)) color = 'green';
+            if(['Pendiente'].includes(status)) color = 'yellow';
+            if(['Inactivo', 'No interesado', 'Sin WhatsApp'].includes(status)) color = 'red';
+            return `<span class="badge badge-${color}">${status}</span>`;
+        }
 
-            State.clientes = State.clientes.map(c => {
-                const inicio = new Date(c.fecha_inicio);
-                const vence = new Date(c.fecha_vencimiento);
-                
-                vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset());
-                inicio.setMinutes(inicio.getMinutes() + inicio.getTimezoneOffset());
-
-                const diasFalt = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
-                const diasDesdeInicio = Math.ceil((hoy - inicio) / (1000 * 60 * 60 * 24));
-
-                let estado = 'Desconocido';
-                let textoDias = '';
-
-                if(diasFalt < 0) {
-                    estado = 'Vencido';
-                    textoDias = `Hace ${Math.abs(diasFalt)} días`;
-                } else if(diasFalt === 0) {
-                    estado = 'Vencido';
-                    textoDias = 'Vence HOY';
-                } else if(diasFalt <= 3) {
-                    estado = 'Por Vencer';
-                    textoDias = `En ${diasFalt} días`;
-                } else if(diasDesdeInicio <= 2) {
-                    estado = 'Recién comprado';
-                    textoDias = `En ${diasFalt} días`;
+        /**
+         * ==========================================
+         * MÓDULOS DE LA APLICACIÓN
+         * ==========================================
+         */
+        
+        // --- NAVEGACIÓN Y CORE ---
+        const app = {
+            state: {
+                config: {},
+                services: [],
+                contacts: [],
+                templates: [],
+                selectedContactForMsg: null
+            },
+            async init() {
+                // Set UI based on mode
+                if(isMockMode) {
+                    document.getElementById('modeLabel').innerText = "Demo Local (Sin Guardar en Nube)";
+                    document.getElementById('connectionStatus').classList.replace('bg-green-500', 'bg-yellow-500');
                 } else {
-                    estado = 'Activo';
-                    textoDias = `En ${diasFalt} días`;
+                    document.getElementById('modeLabel').innerText = "Producción (Google Sheets)";
+                    document.getElementById('connectionStatus').classList.replace('bg-yellow-500', 'bg-green-500');
                 }
 
-                return { ...c, dias_faltantes: diasFalt, texto_dias: textoDias, estado: estado };
-            });
-        }
+                // Cargar datos base
+                await this.loadBaseData();
+                this.navigate('dashboard');
+            },
+            async loadBaseData() {
+                this.state.config = await api.call('getConfig') || {};
+                this.state.services = await api.call('getServices') || [];
+                this.state.templates = await api.call('getTemplates') || [];
+                
+                if(this.state.config.nombre_negocio) {
+                    document.getElementById('headerBusinessName').innerText = this.state.config.nombre_negocio;
+                }
+            },
+            navigate(viewId) {
+                // Ocultar todas las vistas
+                document.querySelectorAll('main > div > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+                // Mostrar solicitada
+                document.getElementById(`view-${viewId}`).classList.remove('hidden');
+                document.getElementById('view-'+viewId).classList.add('flex'); // Mantiene flex si lo necesita
 
-        // ================= RENDERIZADO =================
-        function renderAll() {
-            aplicarConfig();
-            renderDashboard();
-            poblarSelectsGlobales();
-            renderClientes();
-            renderSimpleTable('tbl-vendedores', State.vendedores, ['id_vendedor', 'nombre', 'whatsapp', 'estado']);
-            renderSimpleTable('tbl-plataformas', State.plataformas, ['id_plataforma', 'nombre_plataforma', 'estado', 'fecha_registro']);
-            renderSimpleTable('tbl-historial', State.historial.slice().reverse(), ['fecha_hora', 'nombre_cliente', 'plataforma', 'tipo_mensaje', 'estado_mensaje'], true);
-        }
+                // Actualizar menu activo
+                document.querySelectorAll('#mainNav a').forEach(a => a.classList.remove('active'));
+                event && event.currentTarget ? event.currentTarget.classList.add('active') : null;
 
-        function aplicarConfig() {
-            const c = State.config;
-            document.getElementById('ui-brand-name').textContent = c.nombre_negocio || 'KGB CRM';
-            document.title = (c.nombre_negocio || 'KGB') + ' - CRM';
-            
-            document.getElementById('conf-nombre').value = c.nombre_negocio || '';
-            document.getElementById('conf-resp').value = c.responsable || '';
-            document.getElementById('conf-firma').value = c.firma || '';
-            
-            // CORRECCION DEL #ERROR! DE SHEETS Y DE NUMEROS DEFAULT
-            let numAnt = String(c.numero_anterior || '');
-            let numNew = String(c.nuevo_numero_principal || '');
+                // Títulos
+                const titles = {
+                    'dashboard': 'Dashboard General', 'import': 'Importar Contactos',
+                    'contacts': 'Gestión de Contactos', 'messages': 'Generador de Mensajes IA',
+                    'services': 'Catálogo de Servicios', 'templates': 'Plantillas Inteligentes',
+                    'history': 'Historial de Envíos', 'config': 'Configuración del Sistema'
+                };
+                document.getElementById('pageTitle').innerText = titles[viewId] || 'CRM';
 
-            if(!numAnt || numAnt.includes('#ERROR') || numAnt.trim() === '') numAnt = '917309964';
-            if(!numNew || numNew.includes('#ERROR') || numNew.trim() === '') numNew = '902532240';
+                // Disparar lógica de vista
+                if(viewId === 'dashboard') dashboardModule.load();
+                if(viewId === 'contacts') contactsModule.load();
+                if(viewId === 'services') servicesModule.load();
+                if(viewId === 'config') configModule.load();
+                if(viewId === 'templates') templatesModule.load();
+                if(viewId === 'messages') messagesModule.load();
+                if(viewId === 'history') historyModule.load();
+            }
+        };
 
-            State.config.numero_anterior = numAnt;
-            State.config.nuevo_numero_principal = numNew;
+        // --- DASHBOARD ---
+        const dashboardModule = {
+            async load() {
+                const data = await api.call('getDashboard');
+                if(!data) return;
+                
+                document.getElementById('dashTotalContacts').innerText = data.totalContacts;
+                document.getElementById('dashMsgsToday').innerText = data.msgsToday;
+                document.getElementById('dashNoService').innerText = data.noService;
+                document.getElementById('dashPendingMsg').innerText = data.pendingMsg;
 
-            document.getElementById('conf-nro_ant').value = numAnt;
-            document.getElementById('conf-nro_new').value = numNew;
-        }
+                // Tablas
+                const tContacts = document.getElementById('dashRecentContactsTable');
+                tContacts.innerHTML = data.recentContacts.length ? data.recentContacts.map(c => `
+                    <tr>
+                        <td class="font-medium">${c.nombre_completo || 'Sin nombre'}</td>
+                        <td class="text-gray-400">${c.whatsapp_principal || '-'}</td>
+                        <td>${getStatusBadge(c.estado_contacto)}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="3" class="text-center text-gray-500 py-4">Sin datos</td></tr>';
 
-        function renderDashboard() {
-            const counts = { activos: 0, porVencer: 0, vencidos: 0 };
-            const proximos = [];
-            const nuevos = [...State.clientes].sort((a,b) => new Date(b.fecha_registro) - new Date(a.fecha_registro)).slice(0, 5);
+                const tMsgs = document.getElementById('dashRecentMessagesTable');
+                tMsgs.innerHTML = data.recentMessages.length ? data.recentMessages.map(m => `
+                    <tr>
+                        <td class="font-medium">${m.nombre_contacto}</td>
+                        <td class="text-gray-400 text-sm">${m.tipo_mensaje}</td>
+                        <td class="text-sm text-gray-500">${m.fecha_hora.split(',')[0]}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="3" class="text-center text-gray-500 py-4">Sin historial</td></tr>';
+            }
+        };
 
-            State.clientes.forEach(c => {
-                if(c.estado === 'Activo' || c.estado === 'Recién comprado') counts.activos++;
-                if(c.estado === 'Por Vencer') { counts.porVencer++; proximos.push(c); }
-                if(c.estado === 'Vencido') counts.vencidos++;
-            });
+        // --- IMPORTACIÓN CSV ---
+        const importModule = {
+            parsedData: [],
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                document.getElementById('fileNameDisplay').innerText = file.name;
+                
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        this.processGoogleContactsCSV(results.data);
+                    }
+                });
+            },
+            processGoogleContactsCSV(data) {
+                this.parsedData = [];
+                let stats = { new: 0, noNum: 0 };
 
-            document.getElementById('dash-activos').textContent = counts.activos;
-            document.getElementById('dash-porvencer').textContent = counts.porVencer;
-            document.getElementById('dash-vencidos').textContent = counts.vencidos;
-            document.getElementById('dash-total').textContent = State.clientes.length;
-            document.getElementById('dash-vendedores').textContent = State.vendedores.length;
-            document.getElementById('dash-plataformas').textContent = State.plataformas.length;
+                const findVal = (row, keys) => {
+                    const rowKeys = Object.keys(row);
+                    for(let k of keys) {
+                        let match = rowKeys.find(rk => rk.toLowerCase().trim() === k.toLowerCase());
+                        if(match && row[match]) return row[match];
+                    }
+                    return '';
+                };
 
-            proximos.sort((a,b) => a.dias_faltantes - b.dias_faltantes);
-            
-            // Tablas mini
-            let tbVencer = '';
-            proximos.slice(0,5).forEach(c => {
-                let colorTexto = c.dias_faltantes < 0 ? 'text-red-500' : 'text-orange-400';
-                tbVencer += `<tr><td class="p-4 font-bold text-white">${c.nombre}</td><td class="p-4 text-gray-400">${c.plataforma}</td><td class="p-4 text-right font-bold ${colorTexto}">${c.texto_dias}</td></tr>`;
-            });
-            document.getElementById('tbl-dash-vencer').innerHTML = tbVencer || '<tr><td colspan="3" class="p-4 text-center text-gray-500">Todo en orden, jefe.</td></tr>';
+                data.forEach(row => {
+                    let name = findVal(row, ['Given Name', 'First Name', 'Nombre', 'Nombres', 'Primer nombre']);
+                    let lastName = findVal(row, ['Family Name', 'Last Name', 'Apellido', 'Apellidos']);
+                    let fullName = findVal(row, ['Name', 'Nombre completo', 'Contacto']) || `${name} ${lastName}`.trim();
+                    let phone1 = findVal(row, ['Phone 1 - Value', 'Phone 1', 'Phone', 'Mobile', 'Teléfono 1 - Valor', 'Teléfono', 'Teléfono 1', 'Celular', 'WhatsApp', 'Telefono']);
+                    let phone2 = findVal(row, ['Phone 2 - Value', 'Phone 2', 'Teléfono 2 - Valor', 'Teléfono 2', 'Telefono 2']);
+                    let email = findVal(row, ['E-mail 1 - Value', 'E-mail', 'Email', 'Correo', 'Correo electrónico 1 - Valor', 'Correo electrónico']);
+                    let org = findVal(row, ['Organization 1 - Name', 'Organization Name', 'Company', 'Empresa', 'Organización', 'Compañía']);
+                    let notes = findVal(row, ['Notes', 'Notas', 'Observaciones']);
 
-            let tbNuevos = '';
-            nuevos.forEach(c => {
-                tbNuevos += `<tr><td class="p-4 font-bold text-white">${c.nombre}</td><td class="p-4 text-gray-500 text-xs">${c.fecha_registro.split('T')[0]}</td><td class="p-4 text-right">${getBadge(c.estado)}</td></tr>`;
-            });
-            document.getElementById('tbl-dash-nuevos').innerHTML = tbNuevos;
-        }
+                    phone1 = formatPhone(phone1);
+                    phone2 = formatPhone(phone2);
 
-        function renderClientes() {
-            const tbody = document.getElementById('tbl-clientes');
-            const term = document.getElementById('filtro-buscar').value.toLowerCase();
-            const fEst = document.getElementById('filtro-estado').value;
-            const fPlat = document.getElementById('filtro-plataforma').value;
+                    if(!fullName && !phone1) return; // Saltar vacíos
 
-            let filtrados = State.clientes.filter(c => {
-                const matchTexto = c.nombre.toLowerCase().includes(term) || c.whatsapp.includes(term) || (c.vendedor_nombre||'').toLowerCase().includes(term);
-                const matchEst = fEst === 'Todos' || c.estado === fEst;
-                const matchPlat = fPlat === 'Todas' || c.plataforma === fPlat;
-                return matchTexto && matchEst && matchPlat;
-            });
+                    let contact = {
+                        nombre: name,
+                        apellido: lastName,
+                        nombre_completo: fullName,
+                        whatsapp_principal: phone1,
+                        whatsapp_secundario: phone2,
+                        correo: email,
+                        empresa: org,
+                        observacion: notes,
+                        estado: phone1 ? 'Nuevo' : 'Sin WhatsApp' // Estado interno pre-import
+                    };
+                    
+                    if(phone1) stats.new++; else stats.noNum++;
+                    this.parsedData.push(contact);
+                });
 
-            tbody.innerHTML = '';
-            filtrados.forEach(c => {
-                const vendNombre = State.vendedores.find(v => v.id_vendedor === c.vendedor_id)?.nombre || 'Sin Asignar';
-                tbody.innerHTML += `
-                    <tr class="hover:bg-white/5 transition-colors">
-                        <td class="p-4">
-                            <p class="font-bold text-white">${c.nombre} ${c.apellido}</p>
-                            <p class="text-xs text-green-400"><i class="fa-brands fa-whatsapp mr-1"></i>${c.whatsapp}</p>
+                this.renderPreview(stats);
+            },
+            renderPreview(stats) {
+                document.getElementById('importPreviewContainer').classList.remove('hidden');
+                document.getElementById('btnProcessImport').disabled = false;
+                document.getElementById('btnProcessImport').classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                document.getElementById('previewCount').innerText = this.parsedData.length;
+                document.getElementById('countNew').innerText = stats.new;
+                document.getElementById('countNoNum').innerText = stats.noNum;
+
+                const tbody = document.getElementById('importPreviewTable');
+                tbody.innerHTML = this.parsedData.slice(0, 100).map(c => `
+                    <tr>
+                        <td>${c.nombre_completo}</td>
+                        <td class="${c.whatsapp_principal ? 'text-green-400' : 'text-red-400'}">${c.whatsapp_principal || 'No tiene'}</td>
+                        <td class="text-gray-400">${c.empresa || '-'}</td>
+                        <td>${c.whatsapp_principal ? '<span class="text-green-400 text-xs"><i class="fa-solid fa-check"></i> Listo</span>' : '<span class="text-red-400 text-xs"><i class="fa-solid fa-xmark"></i> Sin Num</span>'}</td>
+                    </tr>
+                `).join('');
+                if(this.parsedData.length > 100) {
+                    tbody.innerHTML += `<tr><td colspan="4" class="text-center text-gray-500 text-xs py-2">+ ${this.parsedData.length - 100} contactos más...</td></tr>`;
+                }
+            },
+            async processImport() {
+                if(this.parsedData.length === 0) return;
+                
+                // En un sistema real, la verificación de duplicados se hace en el backend.
+                try {
+                    const res = await api.call('importContacts', this.parsedData);
+                    Swal.fire('Éxito', `Se importaron/actualizaron ${res.imported} contactos correctamente.`, 'success');
+                    // Reset
+                    this.parsedData = [];
+                    document.getElementById('importPreviewContainer').classList.add('hidden');
+                    document.getElementById('btnProcessImport').disabled = true;
+                    document.getElementById('btnProcessImport').classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('fileNameDisplay').innerText = 'Ningún archivo seleccionado';
+                    document.getElementById('csvFileInput').value = '';
+                } catch(e) {}
+            },
+            downloadTemplate() {
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFFNombre,Apellido,Celular,Correo,Empresa\nJuan,Pérez,987654321,juan@mail.com,Empresa SA";
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "plantilla_contactos.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
+
+        // --- CONTACTOS ---
+        const contactsModule = {
+            async load() {
+                app.state.contacts = await api.call('getContacts') || [];
+                this.render();
+                
+                // Poblar select de servicios en modal y filtros
+                const serviceOptions = app.state.services.filter(s=>s.estado==='Activo').map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                document.getElementById('c_servicio').innerHTML = '<option value="">Ninguno</option>' + serviceOptions;
+                document.getElementById('filterService').innerHTML = '<option value="">Cualquier Servicio</option>' + serviceOptions;
+            },
+            render() {
+                const tbody = document.getElementById('contactsTableBody');
+                if(!app.state.contacts.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-4">No hay contactos registrados</td></tr>';
+                    return;
+                }
+                
+                // Aplicar filtros locales para la UI
+                const search = document.getElementById('searchContacts').value.toLowerCase();
+                const state = document.getElementById('filterState').value;
+                const service = document.getElementById('filterService').value;
+
+                let filtered = app.state.contacts.filter(c => {
+                    const matchSearch = (c.nombre_completo||'').toLowerCase().includes(search) || (c.whatsapp_principal||'').includes(search) || (c.empresa||'').toLowerCase().includes(search);
+                    const matchState = state ? c.estado_contacto === state : true;
+                    const matchService = service ? c.servicio_id === service : true;
+                    return matchSearch && matchState && matchService;
+                });
+
+                tbody.innerHTML = filtered.map(c => {
+                    const srv = app.state.services.find(s => s.id === c.servicio_id);
+                    const srvName = srv ? srv.nombre : '<span class="text-gray-600">Sin asignar</span>';
+                    return `
+                    <tr>
+                        <td>
+                            <div class="font-medium">${c.nombre_completo || 'Sin Nombre'}</div>
+                            <div class="text-xs text-gray-400">${c.empresa || ''}</div>
                         </td>
-                        <td class="p-4"><span class="px-2 py-1 rounded bg-black border border-gray-700 text-kgbGold text-xs font-bold">${c.plataforma}</span></td>
-                        <td class="p-4 text-gray-400 text-sm"><i class="fa-solid fa-user-secret mr-1"></i>${vendNombre}</td>
-                        <td class="p-4 text-sm text-gray-300">
-                            ${c.fecha_vencimiento}
-                            <span class="block text-xs font-bold text-gray-500">${c.texto_dias}</span>
+                        <td>
+                            <div class="text-green-400 font-medium">${c.whatsapp_principal || '-'}</div>
+                            ${c.whatsapp_secundario ? `<div class="text-xs text-gray-500">${c.whatsapp_secundario} (alt)</div>` : ''}
                         </td>
-                        <td class="p-4 text-center">${getBadge(c.estado)}</td>
-                        <td class="p-4 text-center flex gap-2 justify-center">
-                            <button onclick="prepararMensajeRapido('${c.id_cliente}')" class="w-8 h-8 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition" title="Enviar WA"><i class="fa-brands fa-whatsapp"></i></button>
-                            <button onclick="cargarEditarCliente('${c.id_cliente}')" class="w-8 h-8 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="eliminarCliente('${c.id_cliente}')" class="w-8 h-8 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        <td class="text-sm">${srvName}</td>
+                        <td>${getStatusBadge(c.estado_contacto)}</td>
+                        <td class="text-right whitespace-nowrap">
+                            <button onclick="contactsModule.gotoMessage('${c.id}')" class="text-green-400 hover:text-green-300 mx-1 tooltip" title="Enviar Mensaje"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                            <button onclick="contactsModule.edit('${c.id}')" class="text-blue-400 hover:text-blue-300 mx-1"><i class="fa-solid fa-pen"></i></button>
                         </td>
                     </tr>
-                `;
-            });
-        }
-
-        function getBadge(estado) {
-            let cl = '';
-            if(estado === 'Recién comprado') cl = 'status-recien';
-            else if(estado === 'Activo') cl = 'status-activo';
-            else if(estado === 'Por Vencer') cl = 'status-porvencer';
-            else if(estado === 'Vencido') cl = 'status-vencido';
-            return `<span class="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest ${cl}">${estado}</span>`;
-        }
-
-        function poblarSelectsGlobales() {
-            const fPlat = document.getElementById('filtro-plataforma');
-            fPlat.innerHTML = '<option value="Todas">Todas las Plat.</option>';
-            const frmPlat = document.getElementById('form-plat');
-            const frmVend = document.getElementById('form-vend');
-            frmPlat.innerHTML = '';
-            frmVend.innerHTML = '<option value="SIN_VENDEDOR">Sin Vendedor</option>';
-            const msgCli = document.getElementById('msg-cliente');
-            const msgVend = document.getElementById('msg-vendedor');
-            msgCli.innerHTML = '<option value="">-- Buscar cliente --</option>';
-            msgVend.innerHTML = '<option value="SIN_VENDEDOR">Sin Vendedor</option>';
-
-            State.plataformas.filter(p=>p.estado==='activo').forEach(p => {
-                fPlat.innerHTML += `<option value="${p.nombre_plataforma}">${p.nombre_plataforma}</option>`;
-                frmPlat.innerHTML += `<option value="${p.nombre_plataforma}">${p.nombre_plataforma}</option>`;
-            });
-
-            State.vendedores.filter(v=>v.estado==='activo').forEach(v => {
-                frmVend.innerHTML += `<option value="${v.id_vendedor}">${v.nombre} ${v.apellido}</option>`;
-                msgVend.innerHTML += `<option value="${v.id_vendedor}">${v.nombre} ${v.apellido}</option>`;
-            });
-
-            const cliOrd = [...State.clientes].sort((a,b)=>a.nombre.localeCompare(b.nombre));
-            cliOrd.forEach(c => {
-                const icono = c.estado === 'Activo' ? '🟢' : (c.estado==='Vencido' ? '🔴' : '🟡');
-                msgCli.innerHTML += `<option value="${c.id_cliente}">${icono} ${c.nombre} ${c.apellido} - ${c.plataforma} (${c.texto_dias})</option>`;
-            });
-        }
-
-        // ================= MENSAJERÍA =================
-        function onMsgClienteChange() {
-            const id = document.getElementById('msg-cliente').value;
-            if(!id) return limpiarPreview();
-            
-            const cli = State.clientes.find(c => c.id_cliente === id);
-            if(cli.vendedor_id) {
-                document.getElementById('msg-vendedor').value = cli.vendedor_id;
-            } else {
-                document.getElementById('msg-vendedor').value = "SIN_VENDEDOR";
-            }
-
-            // AHORA POR DEFECTO MOSTRAMOS TODAS LAS PLANTILLAS
-            document.getElementById('msg-tipo').value = "TODOS";
-
-            cargarPlantillasXtipo();
-            
-            // Si el cliente está por vencer o vencido, auto-seleccionamos una de vencimiento para agilizar
-            if(cli.dias_faltantes <= 3) {
-                const selectPlan = document.getElementById('msg-plantilla');
-                const optionVenc = Array.from(selectPlan.options).find(o => o.text.toLowerCase().includes('vencimiento'));
-                if(optionVenc) selectPlan.value = optionVenc.value;
-            }
-            
-            generarPrevisualizacion();
-        }
-
-        function cargarPlantillasXtipo() {
-            const tipoFiltro = document.getElementById('msg-tipo').value;
-            const select = document.getElementById('msg-plantilla');
-            select.innerHTML = '';
-            
-            let filtradas = State.plantillas;
-            if (tipoFiltro !== 'TODOS') {
-                filtradas = State.plantillas.filter(p => p.tipo_mensaje === tipoFiltro);
-            }
-            
-            if(filtradas.length === 0) {
-                select.innerHTML = '<option value="">No hay plantillas</option>';
-            } else {
-                // AGRUPAR LAS PLANTILLAS VISUALMENTE
-                const grupos = {};
-                filtradas.forEach(p => {
-                    if(!grupos[p.tipo_mensaje]) grupos[p.tipo_mensaje] = [];
-                    grupos[p.tipo_mensaje].push(p);
-                });
-
-                for(const [tipo, plants] of Object.entries(grupos)) {
-                    let tipoLegible = tipo.replace(/_/g, ' ').toUpperCase();
-                    let groupHtml = `<optgroup label="👉 ${tipoLegible}">`;
-                    plants.forEach(p => {
-                        groupHtml += `<option value="${p.id_plantilla}">${p.nombre_plantilla}</option>`;
-                    });
-                    groupHtml += `</optgroup>`;
-                    select.innerHTML += groupHtml;
+                `}).join('');
+            },
+            filter() { this.render(); },
+            openModal() {
+                document.getElementById('formContact').reset();
+                document.getElementById('c_id').value = '';
+                document.getElementById('modalContactTitle').innerText = 'Nuevo Contacto';
+                document.getElementById('modalContact').classList.remove('hidden');
+            },
+            closeModal() { document.getElementById('modalContact').classList.add('hidden'); },
+            edit(id) {
+                const c = app.state.contacts.find(x => x.id === id);
+                if(!c) return;
+                document.getElementById('c_id').value = c.id;
+                document.getElementById('c_nombre').value = c.nombre || '';
+                document.getElementById('c_apellido').value = c.apellido || '';
+                document.getElementById('c_whatsapp').value = c.whatsapp_principal || '';
+                document.getElementById('c_whatsapp2').value = c.whatsapp_secundario || '';
+                document.getElementById('c_empresa').value = c.empresa || '';
+                document.getElementById('c_correo').value = c.correo || '';
+                document.getElementById('c_servicio').value = c.servicio_id || '';
+                document.getElementById('c_estado').value = c.estado_contacto || 'Nuevo';
+                document.getElementById('c_observacion').value = c.observacion || '';
+                
+                document.getElementById('modalContactTitle').innerText = 'Editar Contacto';
+                document.getElementById('modalContact').classList.remove('hidden');
+            },
+            async save(e) {
+                e.preventDefault();
+                let phone = formatPhone(document.getElementById('c_whatsapp').value);
+                const data = {
+                    id: document.getElementById('c_id').value,
+                    nombre: document.getElementById('c_nombre').value,
+                    apellido: document.getElementById('c_apellido').value,
+                    whatsapp_principal: phone,
+                    whatsapp_secundario: formatPhone(document.getElementById('c_whatsapp2').value),
+                    empresa: document.getElementById('c_empresa').value,
+                    correo: document.getElementById('c_correo').value,
+                    servicio_id: document.getElementById('c_servicio').value,
+                    estado_contacto: document.getElementById('c_estado').value,
+                    observacion: document.getElementById('c_observacion').value,
+                };
+                
+                try {
+                    await api.call('saveContact', data);
+                    this.closeModal();
+                    Swal.fire('Guardado', 'Contacto guardado correctamente', 'success');
+                    this.load();
+                } catch(e) {}
+            },
+            exportCSV() {
+                if(!app.state.contacts || app.state.contacts.length === 0) {
+                    Swal.fire('Vacío', 'No hay contactos para exportar', 'info');
+                    return;
                 }
+                
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+                csvContent += "Nombre Completo,Nombre,Apellido,WhatsApp Principal,WhatsApp Secundario,Correo,Empresa,Estado,Servicio Asignado,Observación\n";
+                
+                app.state.contacts.forEach(c => {
+                    const srv = app.state.services.find(s => s.id === c.servicio_id);
+                    const srvName = srv ? srv.nombre : '';
+                    
+                    const escapeCSV = (text) => `"${(text || '').toString().replace(/"/g, '""')}"`;
+
+                    const row = [
+                        escapeCSV(c.nombre_completo),
+                        escapeCSV(c.nombre),
+                        escapeCSV(c.apellido),
+                        escapeCSV(c.whatsapp_principal),
+                        escapeCSV(c.whatsapp_secundario),
+                        escapeCSV(c.correo),
+                        escapeCSV(c.empresa),
+                        escapeCSV(c.estado_contacto),
+                        escapeCSV(srvName),
+                        escapeCSV(c.observacion)
+                    ];
+                    csvContent += row.join(",") + "\n";
+                });
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Contactos_CRM_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            gotoMessage(id) {
+                app.state.selectedContactForMsg = app.state.contacts.find(x => x.id === id);
+                app.navigate('messages');
             }
-            generarPrevisualizacion();
-        }
+        };
 
-        function seleccionarPlantillaAleatoria() {
-            const select = document.getElementById('msg-plantilla');
-            const options = select.options;
-            if(options.length > 0) {
-                const random = Math.floor(Math.random() * options.length);
-                select.selectedIndex = random;
-                generarPrevisualizacion();
+        // --- SERVICIOS ---
+        const servicesModule = {
+            async load() {
+                app.state.services = await api.call('getServices') || [];
+                this.render();
+            },
+            render() {
+                const tbody = document.getElementById('servicesTableBody');
+                tbody.innerHTML = app.state.services.map(s => `
+                    <tr>
+                        <td class="font-medium">${s.nombre}</td>
+                        <td class="text-sm text-gray-400">${s.categoria}</td>
+                        <td>${getStatusBadge(s.estado)}</td>
+                        <td class="text-right">
+                            <button onclick="servicesModule.edit('${s.id}')" class="text-blue-400 hover:text-blue-300"><i class="fa-solid fa-pen"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+            openModal() {
+                document.getElementById('formService').reset();
+                document.getElementById('s_id').value = '';
+                document.getElementById('modalServiceTitle').innerText = 'Nuevo Servicio';
+                document.getElementById('modalService').classList.remove('hidden');
+            },
+            closeModal() { document.getElementById('modalService').classList.add('hidden'); },
+            edit(id) {
+                const s = app.state.services.find(x => x.id === id);
+                if(!s) return;
+                document.getElementById('s_id').value = s.id;
+                document.getElementById('s_nombre').value = s.nombre;
+                document.getElementById('s_categoria').value = s.categoria;
+                document.getElementById('s_estado').value = s.estado;
+                document.getElementById('modalServiceTitle').innerText = 'Editar Servicio';
+                document.getElementById('modalService').classList.remove('hidden');
+            },
+            async save(e) {
+                e.preventDefault();
+                const data = {
+                    id: document.getElementById('s_id').value,
+                    nombre: document.getElementById('s_nombre').value,
+                    categoria: document.getElementById('s_categoria').value,
+                    estado: document.getElementById('s_estado').value
+                };
+                try {
+                    await api.call('saveService', data);
+                    this.closeModal();
+                    this.load();
+                } catch(e){}
             }
-        }
+        };
 
-        function generarPrevisualizacion() {
-            const cliId = document.getElementById('msg-cliente').value;
-            const tId = document.getElementById('msg-plantilla').value;
-            const vendId = document.getElementById('msg-vendedor').value;
-            
-            if(!cliId || !tId) return limpiarPreview();
-
-            const cli = State.clientes.find(c => c.id_cliente === cliId);
-            const vend = State.vendedores.find(v => v.id_vendedor === vendId) || {};
-            const plan = State.plantillas.find(p => p.id_plantilla === tId);
-            const conf = State.config;
-
-            let txt = plan.contenido;
-
-            if(vendId === 'SIN_VENDEDOR') {
-                txt = txt.replace(/\[vendedor_bloque\]/g, ''); 
-            } else {
-                txt = txt.replace(/\[vendedor_bloque\]/g, `Tu vendedor *${vend.nombre}* nos informa que `);
+        // --- PLANTILLAS ---
+        const templatesModule = {
+            async load() {
+                app.state.templates = await api.call('getTemplates') || [];
+                this.render();
+            },
+            render() {
+                const grid = document.getElementById('templatesGrid');
+                grid.innerHTML = app.state.templates.map(t => `
+                    <div class="glass-panel p-4 flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-white text-sm">${t.nombre_plantilla}</h4>
+                            <button onclick="templatesModule.edit('${t.id}')" class="text-blue-400 text-xs"><i class="fa-solid fa-pen"></i> Editar</button>
+                        </div>
+                        <span class="text-[10px] bg-white/10 px-2 py-1 rounded inline-block w-max mb-2 text-gold">${t.categoria}</span>
+                        <p class="text-xs text-gray-400 flex-1 overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">${t.contenido.replace(/\n/g, '<br>')}</p>
+                    </div>
+                `).join('');
+            },
+            openModal() {
+                document.getElementById('formTemplate').reset();
+                document.getElementById('t_id').value = '';
+                document.getElementById('modalTemplateTitle').innerText = 'Nueva Plantilla';
+                document.getElementById('modalTemplate').classList.remove('hidden');
+            },
+            closeModal() { document.getElementById('modalTemplate').classList.add('hidden'); },
+            edit(id) {
+                const t = app.state.templates.find(x => x.id === id);
+                if(!t) return;
+                document.getElementById('t_id').value = t.id;
+                document.getElementById('t_nombre').value = t.nombre_plantilla;
+                document.getElementById('t_categoria').value = t.categoria;
+                document.getElementById('t_contenido').value = t.contenido;
+                document.getElementById('modalTemplateTitle').innerText = 'Editar Plantilla';
+                document.getElementById('modalTemplate').classList.remove('hidden');
+            },
+            insertVar(variable) {
+                const txtArea = document.getElementById('t_contenido');
+                const start = txtArea.selectionStart;
+                const end = txtArea.selectionEnd;
+                const text = txtArea.value;
+                txtArea.value = text.substring(0, start) + variable + text.substring(end);
+                txtArea.focus();
+                txtArea.selectionEnd = start + variable.length;
+            },
+            async save(e) {
+                e.preventDefault();
+                const data = {
+                    id: document.getElementById('t_id').value,
+                    nombre_plantilla: document.getElementById('t_nombre').value,
+                    categoria: document.getElementById('t_categoria').value,
+                    contenido: document.getElementById('t_contenido').value
+                };
+                try {
+                    await api.call('saveTemplate', data);
+                    this.closeModal();
+                    this.load();
+                } catch(e){}
             }
+        };
 
-            // AQUI SE USAN LOS NUMEROS SEGUROS CORREGIDOS PREVIAMENTE E INCORPORAMOS dias_vencidos
-            const vars = {
-                '\\[nombre_cliente\\]': `*${cli.nombre}*`,
-                '\\[apellido_cliente\\]': cli.apellido,
-                '\\[plataforma\\]': `*${cli.plataforma}*`,
-                '\\[dias_faltantes\\]': cli.dias_faltantes > 0 ? cli.dias_faltantes : 0,
-                '\\[dias_vencidos\\]': cli.dias_faltantes < 0 ? Math.abs(cli.dias_faltantes) : 0,
-                '\\[nuevo_numero_principal\\]': conf.nuevo_numero_principal || '902532240',
-                '\\[numero_anterior\\]': conf.numero_anterior || '917309964',
-                '\\[nombre_negocio\\]': conf.nombre_negocio || 'KGB Streaming',
-                '\\[firma\\]': `_${conf.firma || 'Atentamente'}_`
-            };
-
-            for (const [key, value] of Object.entries(vars)) {
-                txt = txt.replace(new RegExp(key, 'g'), value || '');
-            }
-
-            document.getElementById('msg-textarea').value = txt;
-            updatePreviewFromTextarea();
-        }
-
-        function updatePreviewFromTextarea() {
-            const val = document.getElementById('msg-textarea').value;
-            const htmlFormat = val.replace(/\*(.*?)\*/g, '<b>$1</b>').replace(/_(.*?)_/g, '<i>$1</i>');
-            document.getElementById('msg-preview-html').innerHTML = htmlFormat || 'Escribe algo...';
-            document.getElementById('btn-wa').disabled = val.trim().length === 0;
-        }
-
-        function limpiarPreview() {
-            document.getElementById('msg-textarea').value = '';
-            document.getElementById('msg-preview-html').innerHTML = 'Selecciona un cliente...';
-            document.getElementById('btn-wa').disabled = true;
-        }
-
-        // SALTO DIRECTO DEL MODAL DASHBOARD AL MENSAJE PREPARADO
-        function prepararMensajeRapido(id_cliente) {
-            document.getElementById('modal-dash').classList.add('hidden'); 
-            nav('mensajes');
+        // --- GENERADOR DE MENSAJES ---
+        const messagesModule = {
+            currentMsgText: '',
             
-            document.getElementById('msg-cliente').value = id_cliente;
-            const cli = State.clientes.find(c => c.id_cliente === id_cliente);
-            if(cli.vendedor_id) document.getElementById('msg-vendedor').value = cli.vendedor_id;
-            else document.getElementById('msg-vendedor').value = "SIN_VENDEDOR";
-            
-            // Si viene del Dashboard de Vencimientos, forzamos el filtro a Vencimiento
-            document.getElementById('msg-tipo').value = "vencimiento_cambio_numero";
-            
-            cargarPlantillasXtipo();
-            seleccionarPlantillaAleatoria(); 
-        }
-
-        function abrirWA() {
-            const cId = document.getElementById('msg-cliente').value;
-            const msg = document.getElementById('msg-textarea').value;
-            if(!cId || !msg) return;
-            const c = State.clientes.find(x => x.id_cliente === cId);
-            const num = c.whatsapp.replace(/\D/g, '');
-            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function copiarMensaje() {
-            const val = document.getElementById('msg-textarea').value;
-            navigator.clipboard.writeText(val);
-            toast("Copiado", "Mensaje copiado al portapapeles", "success");
-        }
-
-        async function marcarComoEnviado() {
-            const cId = document.getElementById('msg-cliente').value;
-            if(!cId) return;
-            const c = State.clientes.find(x => x.id_cliente === cId);
-            
-            // Obtenemos la plantilla exacta que se usó para guardar su tipo en el Log
-            const tId = document.getElementById('msg-plantilla').value;
-            const plan = State.plantillas.find(p => p.id_plantilla === tId);
-            
-            const payload = {
-                id_cliente: cId,
-                nombre_cliente: c.nombre,
-                whatsapp_cliente: c.whatsapp,
-                plataforma: c.plataforma,
-                tipo_mensaje: plan ? plan.tipo_mensaje : 'Mensaje Personalizado',
-                estado_mensaje: 'Enviado Manual',
-                responsable: State.config.responsable
-            };
-
-            try {
-                const nLog = await apiPost('addHistorial', payload);
-                State.historial.push(nLog);
-                renderAll();
-                toast("Registrado", "Envío guardado en historial", "success");
-            } catch(e) {}
-        }
-
-        // ================= CLIENTES CRUD =================
-        function abrirModalCliente() {
-            document.getElementById('form-cliente').reset();
-            document.getElementById('form-id').value = '';
-            const m = document.getElementById('modal-cliente');
-            const mc = document.getElementById('modal-cliente-content');
-            m.classList.remove('hidden');
-            setTimeout(() => { m.classList.remove('opacity-0'); mc.classList.remove('scale-95'); }, 10);
-        }
-
-        function cerrarModalCliente() {
-            const m = document.getElementById('modal-cliente');
-            const mc = document.getElementById('modal-cliente-content');
-            m.classList.add('opacity-0'); mc.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async function guardarCliente() {
-            const id = document.getElementById('form-id').value;
-            const payload = {
-                nombre: document.getElementById('form-nombre').value,
-                apellido: document.getElementById('form-apellido').value,
-                whatsapp: document.getElementById('form-wa').value.replace(/\D/g, ''),
-                plataforma: document.getElementById('form-plat').value,
-                vendedor_id: document.getElementById('form-vend').value === 'SIN_VENDEDOR' ? '' : document.getElementById('form-vend').value,
-                fecha_inicio: document.getElementById('form-inicio').value,
-                fecha_vencimiento: document.getElementById('form-vence').value
-            };
-
-            try {
-                if(id) {
-                    payload.id_cliente = id;
-                    const act = await apiPost('editCliente', payload);
-                    const idx = State.clientes.findIndex(c => c.id_cliente === id);
-                    State.clientes[idx] = {...State.clientes[idx], ...act};
-                    toast("Actualizado", "Cliente actualizado con éxito", "success");
+            async load() {
+                // Si venimos de Contactos con uno seleccionado, pre-llenar
+                if(app.state.selectedContactForMsg) {
+                    this.selectContact(app.state.selectedContactForMsg);
                 } else {
-                    const nuevo = await apiPost('addCliente', payload);
-                    State.clientes.push(nuevo);
-                    toast("Guardado", "Cliente registrado con éxito", "success");
+                    this.clearContact();
                 }
-                cerrarModalCliente();
-                procesarClientesCalc();
-                renderAll();
-            } catch(e) {}
-        }
 
-        function cargarEditarCliente(id) {
-            const c = State.clientes.find(x => x.id_cliente === id);
-            document.getElementById('form-id').value = c.id_cliente;
-            document.getElementById('form-nombre').value = c.nombre;
-            document.getElementById('form-apellido').value = c.apellido;
-            document.getElementById('form-wa').value = c.whatsapp;
-            document.getElementById('form-plat').value = c.plataforma;
-            document.getElementById('form-vend').value = c.vendedor_id || 'SIN_VENDEDOR';
-            document.getElementById('form-inicio').value = c.fecha_inicio.split('T')[0];
-            document.getElementById('form-vence').value = c.fecha_vencimiento.split('T')[0];
-            abrirModalCliente();
-        }
-
-        async function eliminarCliente(id) {
-            if(!confirm("¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.")) return;
-            try {
-                await apiPost('deleteCliente', {id});
-                State.clientes = State.clientes.filter(c => c.id_cliente !== id);
-                renderAll();
-                toast("Eliminado", "Cliente borrado", "success");
-            } catch(e) {}
-        }
-
-        async function guardarConfig() {
-            const payload = {
-                nombre_negocio: document.getElementById('conf-nombre').value,
-                responsable: document.getElementById('conf-resp').value,
-                firma: document.getElementById('conf-firma').value,
-                numero_anterior: document.getElementById('conf-nro_ant').value,
-                nuevo_numero_principal: document.getElementById('conf-nro_new').value
-            };
-            try {
-                const nConf = await apiPost('saveConfig', payload);
-                State.config = nConf;
-                aplicarConfig();
-                toast("Guardado", "Configuración de Core actualizada", "success");
-            } catch(e){}
-        }
-
-        // ================= PLATAFORMAS CRUD =================
-        function abrirModalPlataforma() {
-            document.getElementById('form-plataforma').reset();
-            const m = document.getElementById('modal-plataforma');
-            const mc = document.getElementById('modal-plataforma-content');
-            m.classList.remove('hidden');
-            setTimeout(() => { m.classList.remove('opacity-0'); mc.classList.remove('scale-95'); }, 10);
-        }
-
-        function cerrarModalPlataforma() {
-            const m = document.getElementById('modal-plataforma');
-            const mc = document.getElementById('modal-plataforma-content');
-            m.classList.add('opacity-0'); mc.classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        async function guardarPlataforma() {
-            const payload = {
-                nombre_plataforma: document.getElementById('form-plat-nombre').value,
-                estado: document.getElementById('form-plat-estado').value,
-                observacion: 'Agregada manualmente'
-            };
-
-            try {
-                const nueva = await apiPost('addPlataforma', payload);
-                State.plataformas.push(nueva);
-                toast("Guardado", "Plataforma registrada con éxito", "success");
+                // Cargar templates en memoria
+                if(!app.state.templates.length) app.state.templates = await api.call('getTemplates');
                 
-                cerrarModalPlataforma();
-                renderSimpleTable('tbl-plataformas', State.plataformas, ['id_plataforma', 'nombre_plataforma', 'estado', 'fecha_registro']);
+                // Poblar select de servicios manuales
+                const serviceOptions = app.state.services.filter(s=>s.estado==='Activo').map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                document.getElementById('msgServiceSelect').innerHTML = '<option value="">Usar servicio asignado al contacto</option>' + serviceOptions;
+            },
+            filterContactsDropdown() {
+                const search = document.getElementById('msgSearchContact').value.toLowerCase();
+                const dropdown = document.getElementById('msgContactDropdown');
                 
-                // Vuelve a llenar los selects para que aparezca al crear nuevos clientes
-                poblarSelectsGlobales();
-            } catch(e) {}
-        }
+                if(search.length < 2) { dropdown.classList.add('hidden'); return; }
 
-        // ================= HELPERS UI =================
-        function renderSimpleTable(tbodyId, dataArray, cols, showDate=false) {
-            const tbody = document.getElementById(tbodyId);
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            dataArray.forEach(d => {
-                let row = '<tr class="hover:bg-white/5 transition">';
-                cols.forEach(c => {
-                    let val = d[c] || '-';
-                    if(c.includes('fecha') && val.includes('T')) val = val.split('T')[0];
-                    if(c === 'estado') val = `<span class="text-[10px] uppercase font-bold text-kgbGold">${val}</span>`;
-                    row += `<td class="p-4">${val}</td>`;
+                const matches = app.state.contacts.filter(c => 
+                    (c.nombre_completo||'').toLowerCase().includes(search) || 
+                    (c.whatsapp_principal||'').includes(search)
+                ).slice(0, 10); // Max 10 results
+
+                if(matches.length > 0) {
+                    dropdown.innerHTML = matches.map(c => `
+                        <div class="p-3 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0" onclick='messagesModule.selectContactById("${c.id}")'>
+                            <div class="font-medium text-sm">${c.nombre_completo || 'Sin nombre'}</div>
+                            <div class="text-xs text-green-400">${c.whatsapp_principal || 'Sin número'}</div>
+                        </div>
+                    `).join('');
+                    dropdown.classList.remove('hidden');
+                } else {
+                    dropdown.innerHTML = '<div class="p-3 text-sm text-gray-500">No se encontraron contactos</div>';
+                    dropdown.classList.remove('hidden');
+                }
+            },
+            selectContactById(id) {
+                const c = app.state.contacts.find(x => x.id === id);
+                if(c) this.selectContact(c);
+            },
+            selectContact(contact) {
+                app.state.selectedContactForMsg = contact;
+                
+                document.getElementById('msgSearchContact').value = '';
+                document.getElementById('msgContactDropdown').classList.add('hidden');
+                document.getElementById('msgSearchContact').classList.add('hidden');
+                
+                const card = document.getElementById('msgSelectedContactCard');
+                document.getElementById('msgCardName').innerText = contact.nombre_completo || 'Sin Nombre';
+                document.getElementById('msgCardPhone').innerHTML = `<i class="fa-brands fa-whatsapp"></i> ${contact.whatsapp_principal || 'Sin número'}`;
+                
+                let srvName = 'Ninguno';
+                if(contact.servicio_id) {
+                    const s = app.state.services.find(x=>x.id === contact.servicio_id);
+                    if(s) srvName = s.nombre;
+                }
+                document.getElementById('msgCardService').innerText = srvName;
+                
+                card.classList.remove('hidden');
+
+                // Si el contacto no tiene número, deshabilitar botones
+                const hasPhone = !!contact.whatsapp_principal;
+                document.getElementById('btnOpenWhatsApp').disabled = !hasPhone;
+                if(!hasPhone) {
+                    document.getElementById('msgPreviewBox').innerText = "⚠️ Este contacto no tiene número de WhatsApp registrado. No se puede enviar mensaje.";
+                } else {
+                    this.generatePreview();
+                }
+            },
+            clearContact() {
+                app.state.selectedContactForMsg = null;
+                document.getElementById('msgSelectedContactCard').classList.add('hidden');
+                document.getElementById('msgSearchContact').classList.remove('hidden');
+                document.getElementById('msgSearchContact').value = '';
+                document.getElementById('msgPreviewBox').innerText = "Seleccione un contacto y una plantilla.";
+                document.getElementById('btnOpenWhatsApp').disabled = true;
+                document.getElementById('btnMarkSent').disabled = true;
+                this.currentMsgText = '';
+            },
+            filterTemplates() {
+                const category = document.getElementById('msgIntentSelect').value;
+                const select = document.getElementById('msgTemplateSelect');
+                
+                let html = '<option value="">-- Seleccionar Plantilla --</option>';
+                if(category) {
+                    const filtered = app.state.templates.filter(t => t.categoria === category);
+                    html += filtered.map(t => `<option value="${t.id}">${t.nombre_plantilla}</option>`).join('');
+                }
+                select.innerHTML = html;
+                this.generatePreview();
+            },
+            generatePreview() {
+                const contact = app.state.selectedContactForMsg;
+                const templateId = document.getElementById('msgTemplateSelect').value;
+                
+                if(!contact || !contact.whatsapp_principal) return;
+                
+                const btnWhats = document.getElementById('btnOpenWhatsApp');
+                const btnMark = document.getElementById('btnMarkSent');
+
+                if(!templateId) {
+                    document.getElementById('msgPreviewBox').innerText = "Seleccione una plantilla para ver la vista previa.";
+                    btnWhats.disabled = true;
+                    btnMark.disabled = true;
+                    return;
+                }
+
+                const template = app.state.templates.find(t => t.id === templateId);
+                if(!template) return;
+
+                let text = template.contenido;
+                const cfg = app.state.config;
+
+                // Determinar servicio (manual override o del contacto)
+                let serviceName = "nuestros servicios técnicos"; // Default
+                const manualServiceId = document.getElementById('msgServiceSelect').value;
+                let activeServiceId = manualServiceId || contact.servicio_id;
+                
+                if(activeServiceId) {
+                    const s = app.state.services.find(x=>x.id === activeServiceId);
+                    if(s) serviceName = s.nombre;
+                }
+
+                // Reemplazo de variables
+                const defaultGreeting = contact.nombre ? contact.nombre : "Hola 😊";
+                
+                text = text.replace(/\[nombre_contacto\]/g, contact.nombre || 'Cliente');
+                text = text.replace(/\[apellido_contacto\]/g, contact.apellido || '');
+                text = text.replace(/\[nombre_completo_contacto\]/g, contact.nombre_completo || 'Cliente');
+                text = text.replace(/\[whatsapp_contacto\]/g, contact.whatsapp_principal || '');
+                
+                text = text.replace(/\[servicio\]/g, serviceName);
+                
+                text = text.replace(/\[nombre_negocio\]/g, cfg.nombre_negocio || 'Soporte Técnico');
+                text = text.replace(/\[responsable\]/g, cfg.responsable || '');
+                text = text.replace(/\[numero_anterior\]/g, cfg.numero_anterior || '');
+                text = text.replace(/\[nuevo_numero_principal\]/g, cfg.nuevo_numero_principal || '');
+                text = text.replace(/\[nuevo_numero_secundario\]/g, cfg.nuevo_numero_secundario || '');
+                text = text.replace(/\[numero_yape\]/g, cfg.numero_yape || '');
+                text = text.replace(/\[numero_plin\]/g, cfg.numero_plin || '');
+                text = text.replace(/\[numero_deposito\]/g, cfg.numero_deposito || '');
+                text = text.replace(/\[firma\]/g, cfg.firma || '');
+
+                // Regla: Si no hay nombre, arreglar saludos feos
+                if(!contact.nombre) {
+                    text = text.replace("Hola, Cliente 😊", "Hola 😊");
+                    text = text.replace("Buen día, Cliente", "Buen día");
+                }
+
+                this.currentMsgText = text;
+                
+                // Formatear para HTML preview (negritas de whatsapp, saltos de linea)
+                let htmlPreview = text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+                    .replace(/_(.*?)_/g, '<em>$1</em>')
+                    .replace(/~(.*?)~/g, '<del>$1</del>');
+
+                document.getElementById('msgPreviewBox').innerHTML = htmlPreview;
+                
+                btnWhats.disabled = false;
+                btnMark.disabled = false;
+            },
+            copyText() {
+                if(!this.currentMsgText) return;
+                navigator.clipboard.writeText(this.currentMsgText).then(() => {
+                    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Copiado' });
                 });
-                row += '</tr>';
-                tbody.innerHTML += row;
-            });
-        }
+            },
+            openWhatsApp() {
+                const contact = app.state.selectedContactForMsg;
+                if(!contact || !contact.whatsapp_principal || !this.currentMsgText) return;
 
-        // CORRECCION: MODAL CON LA COLUMNA DE BOTON DE WHATSAPP
-        function abrirModalDashboard(tipo) {
-            const m = document.getElementById('modal-dash');
-            document.getElementById('md-title').textContent = "Detalle: " + tipo;
-            let htHead = '<th>Cliente</th><th>WA</th><th>Vence</th><th>Estado</th><th class="text-center">Acción</th>';
-            let htBody = '';
-            
-            let clientesFiltrados = State.clientes.filter(c => {
-                if(tipo === 'Activos') return c.estado === 'Activo' || c.estado === 'Recién comprado';
-                if(tipo === 'Vencidos') return c.estado === 'Vencido';
-                return c.estado === tipo; 
-            });
-            
-            clientesFiltrados.forEach(c => {
-                htBody += `<tr class="hover:bg-white/5">
-                    <td class="p-4 font-bold text-white">${c.nombre}</td>
-                    <td class="p-4 text-gray-400">${c.whatsapp}</td>
-                    <td class="p-4 text-gray-400">${c.fecha_vencimiento}</td>
-                    <td class="p-4">${getBadge(c.estado)}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="prepararMensajeRapido('${c.id_cliente}')" class="w-8 h-8 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition shadow-btn" title="Preparar WhatsApp">
-                            <i class="fa-brands fa-whatsapp"></i>
-                        </button>
-                    </td>
-                </tr>`;
-            });
-            
-            document.getElementById('md-head').innerHTML = htHead;
-            document.getElementById('md-body').innerHTML = htBody || '<tr><td colspan="5" class="p-8 text-center text-gray-500">No hay registros en esta categoría.</td></tr>';
-            m.classList.remove('hidden');
-        }
+                const phone = contact.whatsapp_principal;
+                const encodedMsg = encodeURIComponent(this.currentMsgText);
+                const url = `https://wa.me/${phone}?text=${encodedMsg}`;
+                
+                window.open(url, '_blank');
+                
+                // Auto registrar en historial
+                this.markAsSent(true);
+            },
+            async markAsSentManually() {
+                await this.markAsSent(false);
+                Swal.fire('Registrado', 'El envío manual fue registrado en el historial.', 'success');
+            },
+            async markAsSent(openedApp) {
+                const contact = app.state.selectedContactForMsg;
+                const templateId = document.getElementById('msgTemplateSelect').value;
+                const template = app.state.templates.find(t => t.id === templateId);
 
-        function toast(title, msg, type) {
-            const box = document.getElementById('toast-box');
-            let bg = 'bg-gray-800 border-gray-700 text-white';
-            let icon = '<i class="fa-solid fa-info-circle text-blue-400"></i>';
-            if(type==='success') { bg = 'bg-green-900 border-green-700 text-green-100'; icon = '<i class="fa-solid fa-check-circle text-green-400"></i>'; }
-            if(type==='error') { bg = 'bg-red-900 border-red-700 text-red-100'; icon = '<i class="fa-solid fa-triangle-exclamation text-red-400"></i>'; }
+                if(!contact || !template) return;
 
-            const el = document.createElement('div');
-            el.className = `${bg} border p-4 rounded-xl shadow-2xl flex items-start gap-3 min-w-[300px] transform transition-all duration-300 translate-x-full`;
-            el.innerHTML = `${icon}<div><h4 class="font-bold text-sm leading-tight">${title}</h4><p class="text-xs opacity-80 mt-1">${msg}</p></div>`;
-            box.appendChild(el);
-            
-            setTimeout(()=> el.classList.remove('translate-x-full'), 10);
-            setTimeout(()=> {
-                el.classList.add('opacity-0');
-                setTimeout(()=>el.remove(), 300);
-            }, 3000);
-        }
+                const data = {
+                    id_contacto: contact.id,
+                    nombre_contacto: contact.nombre_completo,
+                    whatsapp_contacto: contact.whatsapp_principal,
+                    servicio: document.getElementById('msgCardService').innerText, // lo que diga la UI
+                    tipo_mensaje: template.categoria,
+                    plantilla_usada: template.nombre_plantilla,
+                    mensaje_enviado: this.currentMsgText,
+                    estado_mensaje: openedApp ? 'Abierto en WA' : 'Registrado manual',
+                    responsable: app.state.config.responsable || 'Sistema'
+                };
+
+                try {
+                    await api.call('saveHistory', data);
+                    
+                    // Actualizar estado del contacto si era "Nuevo" a "Contactado"
+                    if(contact.estado_contacto === 'Nuevo' || contact.estado_contacto === 'Pendiente') {
+                        contact.estado_contacto = 'Contactado';
+                        await api.call('saveContact', contact);
+                    }
+                } catch(e) {
+                    console.error("Error guardando historial", e);
+                }
+            }
+        };
+
+        // --- HISTORIAL ---
+        const historyModule = {
+            async load() {
+                app.state.history = await api.call('getHistory') || [];
+                this.render();
+            },
+            render() {
+                const tbody = document.getElementById('historyTableBody');
+                const search = document.getElementById('searchHistory').value.toLowerCase();
+                
+                let filtered = app.state.history;
+                if(search) {
+                    filtered = filtered.filter(h => 
+                        (h.nombre_contacto||'').toLowerCase().includes(search) || 
+                        (h.whatsapp_contacto||'').includes(search) ||
+                        (h.tipo_mensaje||'').toLowerCase().includes(search)
+                    );
+                }
+
+                tbody.innerHTML = filtered.map(h => `
+                    <tr>
+                        <td class="text-sm text-gray-400 whitespace-nowrap">${h.fecha_hora.split(',')[0]} <br> <span class="text-xs">${h.fecha_hora.split(',')[1]||''}</span></td>
+                        <td class="font-medium">${h.nombre_contacto}</td>
+                        <td class="text-green-400 text-sm">${h.whatsapp_contacto}</td>
+                        <td>
+                            <div class="text-sm">${h.plantilla_usada}</div>
+                            <div class="text-xs text-gray-500">${h.estado_mensaje}</div>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+            filter() { this.render(); }
+        };
+
+        // --- CONFIGURACIÓN ---
+        const configModule = {
+            load() {
+                const c = app.state.config;
+                document.getElementById('cfg_nombre_negocio').value = c.nombre_negocio || '';
+                document.getElementById('cfg_responsable').value = c.responsable || '';
+                document.getElementById('cfg_firma').value = c.firma || '';
+                document.getElementById('cfg_numero_anterior').value = c.numero_anterior || '';
+                document.getElementById('cfg_nuevo_numero_principal').value = c.nuevo_numero_principal || '';
+                document.getElementById('cfg_nuevo_numero_secundario').value = c.nuevo_numero_secundario || '';
+                document.getElementById('cfg_numero_yape').value = c.numero_yape || '';
+                document.getElementById('cfg_numero_plin').value = c.numero_plin || '';
+                document.getElementById('cfg_numero_deposito').value = c.numero_deposito || '';
+            },
+            async save(e) {
+                e.preventDefault();
+                const data = {
+                    nombre_negocio: document.getElementById('cfg_nombre_negocio').value,
+                    responsable: document.getElementById('cfg_responsable').value,
+                    firma: document.getElementById('cfg_firma').value,
+                    numero_anterior: document.getElementById('cfg_numero_anterior').value,
+                    nuevo_numero_principal: document.getElementById('cfg_nuevo_numero_principal').value,
+                    nuevo_numero_secundario: document.getElementById('cfg_nuevo_numero_secundario').value,
+                    numero_yape: document.getElementById('cfg_numero_yape').value,
+                    numero_plin: document.getElementById('cfg_numero_plin').value,
+                    numero_deposito: document.getElementById('cfg_numero_deposito').value,
+                };
+                try {
+                    await api.call('saveConfig', data);
+                    app.state.config = {...app.state.config, ...data};
+                    document.getElementById('headerBusinessName').innerText = data.nombre_negocio;
+                    Swal.fire('Guardado', 'Configuración actualizada', 'success');
+                } catch(e){}
+            }
+        };
+
+        // Iniciar App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
     </script>
 </body>
 </html>
