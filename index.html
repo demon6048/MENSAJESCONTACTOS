@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGB Streaming - CRM 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        kgbDark: '#070B14',
+                        kgbPanel: '#111827', 
+                        kgbGold: '#D4AF37',
+                        kgbGoldHover: '#F3C943'
+                    },
+                    boxShadow: {
+                        '3d': '0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 10px rgba(212, 175, 55, 0.1) inset',
+                        'btn': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tipografía y fondos globales */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1a233a 0%, #070B14 100%);
+            color: #e5e7eb;
+        }
+
+        /* Utilidades Glassmorphism y 3D */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: var(--tw-shadow-3d);
+        }
+
+        .input-3d {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+        .input-3d:focus {
+            border-color: #D4AF37;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(212,175,55,0.3);
+            outline: none;
+        }
+
+        /* Scrollbar estilizado */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+
+        /* Icono de Calendario en Dark Mode */
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(0.8) sepia(1) hue-rotate(5deg) saturate(3);
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Navegación y Tab control */
+        .tab-content { display: none; animation: fadeIn 0.4s ease-out forwards; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #D4AF37;
+            color: #D4AF37;
+        }
+
+        /* Loader */
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #D4AF37; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Badges de Estado */
+        .status-recien { background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+        .status-activo { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }
+        .status-porvencer { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }
+        .status-vencido { background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Pantalla de Carga Global -->
+    <div id="loader" class="fixed inset-0 bg-kgbDark z-[100] flex flex-col justify-center items-center backdrop-blur-md">
+        <div class="spinner mb-4"></div>
+        <p class="text-kgbGold font-bold tracking-widest text-lg drop-shadow-md">INICIANDO SISTEMA...</p>
+    </div>
+
+    <!-- Contenedor Toasts -->
+    <div id="toast-box" class="fixed top-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- Menú Lateral -->
+    <aside class="w-72 glass-panel border-r border-gray-800 flex flex-col h-full hidden md:flex z-20 shadow-2xl relative">
+        <div class="p-6 flex items-center gap-4 border-b border-gray-800 bg-black/20">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-kgbGold to-yellow-700 flex items-center justify-center shadow-btn">
+                <i class="fa-solid fa-crown text-black text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-white tracking-wide" id="ui-brand-name">KGB CRM</h1>
+                <p class="text-xs text-kgbGold">Gestión Élite</p>
+            </div>
+        </div>
+        
+        <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
+            <p class="px-4 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-2">Principal</p>
+            <button onclick="nav('dashboard')" class="nav-link active w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-layer-group w-5 text-center"></i> Dashboard
+            </button>
+            <button onclick="nav('clientes')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-users w-5 text-center"></i> Clientes
+            </button>
+            <button onclick="nav('mensajes')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-brands fa-whatsapp w-5 text-center text-green-400"></i> Enviar Mensajes
+            </button>
+            
+            <p class="px-4 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-6">Administración</p>
+            <button onclick="nav('vendedores')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-user-secret w-5 text-center"></i> Vendedores
+            </button>
+            <button onclick="nav('plataformas')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-clapperboard w-5 text-center"></i> Plataformas
+            </button>
+            <button onclick="nav('historial')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Historial
+            </button>
+            <button onclick="nav('configuracion')" class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all font-medium">
+                <i class="fa-solid fa-gear w-5 text-center"></i> Configuración
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Header Móvil -->
+    <header class="md:hidden glass-panel p-4 flex justify-between items-center fixed top-0 w-full z-30 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-crown text-kgbGold"></i>
+            <span class="font-bold text-white">KGB CRM</span>
+        </div>
+        <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute');" class="text-white text-xl"><i class="fa-solid fa-bars"></i></button>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 relative">
+        
+        <!-- ================= DASHBOARD ================= -->
+        <section id="dashboard" class="tab-content active max-w-7xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-4xl font-extrabold text-white mb-1">Visión General</h2>
+                    <p class="text-gray-400">Panel de control de cuentas y vencimientos.</p>
+                </div>
+            </div>
+            
+            <!-- Cards 3D -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                
+                <div onclick="abrirModalDashboard('Activos')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/10 rounded-full blur-xl group-hover:bg-green-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-4 relative">
+                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Activos</p>
+                        <i class="fa-solid fa-shield-check text-green-400 text-2xl drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]"></i>
+                    </div>
+                    <p class="text-4xl font-black text-white" id="dash-activos">0</p>
+                </div>
+
+                <div onclick="abrirModalDashboard('Por Vencer')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden border-b-2 border-orange-500/50">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-4 relative">
+                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Por vencer (≤3d)</p>
+                        <i class="fa-solid fa-triangle-exclamation text-orange-400 text-2xl drop-shadow-[0_0_10px_rgba(251,146,60,0.5)]"></i>
+                    </div>
+                    <p class="text-4xl font-black text-white" id="dash-porvencer">0</p>
+                </div>
+
+                <div onclick="abrirModalDashboard('Vencidos')" class="glass-panel p-6 rounded-2xl cursor-pointer hover:-translate-y-1 transition-transform group relative overflow-hidden border-b-2 border-red-500/50">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-4 relative">
+                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Vencidos</p>
+                        <i class="fa-solid fa-circle-xmark text-red-500 text-2xl drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]"></i>
+                    </div>
+                    <p class="text-4xl font-black text-white" id="dash-vencidos">0</p>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-sm text-gray-400 font-semibold uppercase tracking-wider">Estadísticas</p>
+                        <i class="fa-solid fa-chart-line text-blue-400 text-2xl"></i>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between text-sm"><span class="text-gray-400">Total Clientes:</span> <span class="font-bold text-white" id="dash-total">0</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-400">Vendedores:</span> <span class="font-bold text-white" id="dash-vendedores">0</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-400">Plataformas:</span> <span class="font-bold text-white" id="dash-plataformas">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tablas Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Por Vencer Rápidos -->
+                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-gray-800 bg-black/20 flex justify-between items-center">
+                        <h3 class="font-bold text-white"><i class="fa-solid fa-fire text-orange-500 mr-2"></i> Próximos Vencimientos</h3>
+                        <button onclick="nav('clientes')" class="text-xs text-kgbGold hover:underline">Ver todos</button>
+                    </div>
+                    <div class="overflow-x-auto p-0 flex-1">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-black/40 text-gray-400 text-xs uppercase">
+                                <tr><th class="p-4">Cliente</th><th class="p-4">Plataforma</th><th class="p-4 text-right">Días</th></tr>
+                            </thead>
+                            <tbody id="tbl-dash-vencer" class="divide-y divide-gray-800">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Últimos registrados -->
+                <div class="glass-panel rounded-2xl overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-gray-800 bg-black/20">
+                        <h3 class="font-bold text-white"><i class="fa-solid fa-user-plus text-blue-400 mr-2"></i> Últimos Clientes</h3>
+                    </div>
+                    <div class="overflow-x-auto p-0 flex-1">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-black/40 text-gray-400 text-xs uppercase">
+                                <tr><th class="p-4">Cliente</th><th class="p-4">Registro</th><th class="p-4 text-right">Estado</th></tr>
+                            </thead>
+                            <tbody id="tbl-dash-nuevos" class="divide-y divide-gray-800">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= CLIENTES ================= -->
+        <section id="clientes" class="tab-content max-w-full mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-4xl font-extrabold text-white mb-1">Cartera de Clientes</h2>
+                    <p class="text-gray-400">Gestión de cuentas y licencias.</p>
+                </div>
+                <button onclick="abrirModalCliente()" class="bg-gradient-to-r from-kgbGold to-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow-btn hover:scale-105 transition-transform flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> Nuevo Cliente
+                </button>
+            </div>
+
+            <!-- Filtros Glass -->
+            <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row gap-4 items-center border border-gray-700">
+                <div class="relative flex-1 w-full">
+                    <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-500"></i>
+                    <input type="text" id="filtro-buscar" onkeyup="renderClientes()" placeholder="Buscar por nombre, número o vendedor..." class="w-full pl-11 p-3 rounded-lg input-3d">
+                </div>
+                <select id="filtro-estado" onchange="renderClientes()" class="p-3 rounded-lg input-3d w-full md:w-48 appearance-none">
+                    <option value="Todos">Todos los estados</option>
+                    <option value="Recién comprado">Recién comprados</option>
+                    <option value="Activo">Activos</option>
+                    <option value="Por Vencer">Por Vencer</option>
+                    <option value="Vencido">Vencidos</option>
+                </select>
+                <select id="filtro-plataforma" onchange="renderClientes()" class="p-3 rounded-lg input-3d w-full md:w-48 appearance-none">
+                    <option value="Todas">Todas las Plat.</option>
+                    <!-- Dinámico -->
+                </select>
+            </div>
+
+            <div class="glass-panel rounded-2xl overflow-hidden shadow-3d">
+                <div class="overflow-x-auto min-h-[400px]">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-black/60 text-kgbGold text-xs uppercase tracking-widest">
+                            <tr>
+                                <th class="p-4 border-b border-gray-800">Cliente / WA</th>
+                                <th class="p-4 border-b border-gray-800">Plataforma</th>
+                                <th class="p-4 border-b border-gray-800">Vendedor</th>
+                                <th class="p-4 border-b border-gray-800">Vencimiento</th>
+                                <th class="p-4 border-b border-gray-800 text-center">Estado</th>
+                                <th class="p-4 border-b border-gray-800 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-clientes" class="divide-y divide-gray-800/50">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ENVIAR MENSAJES ================= -->
+        <section id="mensajes" class="tab-content max-w-6xl mx-auto">
+            <h2 class="text-4xl font-extrabold text-white mb-2">Mensajería Inteligente</h2>
+            <p class="text-gray-400 mb-8">Prepara envíos manuales a WhatsApp codificados con los datos del cliente.</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Configurador -->
+                <div class="glass-panel p-6 rounded-2xl shadow-3d space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-kgbGold mb-2"><i class="fa-solid fa-user-tag mr-2"></i>1. Seleccionar Cliente</label>
+                        <select id="msg-cliente" onchange="onMsgClienteChange()" class="w-full p-3 rounded-lg input-3d">
+                            <option value="">-- Buscar cliente --</option>
+                            <!-- Dinámico -->
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-kgbGold mb-2">Vendedor asignado</label>
+                            <select id="msg-vendedor" onchange="generarPrevisualizacion()" class="w-full p-3 rounded-lg input-3d opacity-80">
+                                <option value="SIN_VENDEDOR">Sin Vendedor</option>
+                                <!-- Dinámico -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-kgbGold mb-2">Tipo de Mensaje</label>
+                            <select id="msg-tipo" onchange="cargarPlantillasXtipo()" class="w-full p-3 rounded-lg input-3d">
+                                <option value="vencimiento_cambio_numero">Vencimiento + Cambio Nro</option>
+                                <option value="solo_cambio_numero">Solo Cambio Número</option>
+                                <option value="invitacion_compra">Invitación Compra</option>
+                                <option value="cliente_sin_nombre">Sin Nombre</option>
+                                <option value="cliente_sin_vendedor">Sin Vendedor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm font-bold text-kgbGold">2. Plantilla (Variación)</label>
+                            <button onclick="seleccionarPlantillaAleatoria()" class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-white transition"><i class="fa-solid fa-dice mr-1"></i> Aleatoria</button>
+                        </div>
+                        <select id="msg-plantilla" onchange="generarPrevisualizacion()" class="w-full p-3 rounded-lg input-3d">
+                            <!-- Dinámico -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-kgbGold mb-2">3. Editor Manual (Opcional)</label>
+                        <textarea id="msg-textarea" onkeyup="updatePreviewFromTextarea()" rows="6" class="w-full p-3 rounded-lg input-3d font-mono text-sm leading-relaxed" placeholder="El mensaje aparecerá aquí para ediciones de última hora..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Preview y Envío -->
+                <div class="flex flex-col gap-6 h-full">
+                    <div class="glass-panel p-6 rounded-2xl flex-1 shadow-3d border border-green-500/30 relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 opacity-5 text-[150px]"><i class="fa-brands fa-whatsapp"></i></div>
+                        <h3 class="font-bold text-green-400 mb-4 border-b border-gray-700 pb-2"><i class="fa-solid fa-eye mr-2"></i> Vista Previa Final</h3>
+                        
+                        <!-- Burbuja WA -->
+                        <div class="bg-[#d9fdd3] text-[#111b21] p-4 rounded-xl rounded-tl-none relative shadow-md mt-4 max-w-[95%]">
+                            <div class="absolute -left-3 top-0 w-0 h-0 border-t-[15px] border-t-[#d9fdd3] border-l-[15px] border-l-transparent"></div>
+                            <p id="msg-preview-html" class="whitespace-pre-wrap text-[15px] leading-snug font-sans">Selecciona un cliente para generar el mensaje.</p>
+                            <p class="text-[10px] text-gray-500 text-right mt-1" id="msg-preview-time">12:00 PM</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="btn-wa" onclick="abrirWA()" class="col-span-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-black py-4 rounded-xl shadow-btn hover:scale-[1.02] transition-transform text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-brands fa-whatsapp text-2xl"></i> ABRIR WHATSAPP
+                        </button>
+                        <button onclick="copiarMensaje()" class="glass-panel text-white py-3 rounded-xl hover:bg-white/10 transition font-bold"><i class="fa-regular fa-copy mr-2"></i> Copiar Texto</button>
+                        <button onclick="marcarComoEnviado()" class="glass-panel text-blue-400 border border-blue-500/30 py-3 rounded-xl hover:bg-blue-500/10 transition font-bold"><i class="fa-solid fa-check-double mr-2"></i> Registrar Envío</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Secciones Vendedores, Plataformas, Historial, Config -->
+        <section id="vendedores" class="tab-content max-w-5xl mx-auto">
+            <h2 class="text-4xl font-extrabold text-white mb-6">Fuerza de Ventas</h2>
+            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
+                        <tr><th class="p-4">ID</th><th class="p-4">Nombre</th><th class="p-4">WhatsApp</th><th class="p-4">Estado</th></tr>
+                    </thead>
+                    <tbody id="tbl-vendedores" class="divide-y divide-gray-800"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="plataformas" class="tab-content max-w-5xl mx-auto">
+            <h2 class="text-4xl font-extrabold text-white mb-6">Plataformas Streaming</h2>
+            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
+                        <tr><th class="p-4">ID</th><th class="p-4">Plataforma</th><th class="p-4">Estado</th><th class="p-4">Registro</th></tr>
+                    </thead>
+                    <tbody id="tbl-plataformas" class="divide-y divide-gray-800"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="historial" class="tab-content max-w-6xl mx-auto">
+            <h2 class="text-4xl font-extrabold text-white mb-6">Logs de Mensajes</h2>
+            <div class="glass-panel p-6 rounded-2xl shadow-3d overflow-x-auto min-h-[400px]">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-black/60 text-kgbGold text-xs uppercase">
+                        <tr><th class="p-4">Fecha</th><th class="p-4">Cliente</th><th class="p-4">Plataforma</th><th class="p-4">Tipo</th><th class="p-4">Estado</th></tr>
+                    </thead>
+                    <tbody id="tbl-historial" class="divide-y divide-gray-800"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="configuracion" class="tab-content max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-4xl font-extrabold text-white">Configuración del Core</h2>
+                <button onclick="guardarConfig()" class="bg-kgbGold text-black px-6 py-2 rounded-lg font-bold shadow-btn hover:bg-kgbGoldHover transition"><i class="fa-solid fa-save mr-2"></i> Guardar</button>
+            </div>
+            <div class="glass-panel p-8 rounded-2xl shadow-3d grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-2"><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nombre Sistema</label><input type="text" id="conf-nombre" class="w-full p-3 input-3d rounded"></div>
+                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Responsable</label><input type="text" id="conf-resp" class="w-full p-3 input-3d rounded"></div>
+                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Firma Mensajes</label><input type="text" id="conf-firma" class="w-full p-3 input-3d rounded"></div>
+                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nro Antiguo</label><input type="text" id="conf-nro_ant" placeholder="917309964" class="w-full p-3 input-3d rounded"></div>
+                <div><label class="text-kgbGold text-xs font-bold uppercase block mb-1">Nro Nuevo Principal</label><input type="text" id="conf-nro_new" placeholder="902532240" class="w-full p-3 input-3d rounded"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Acción Cliente -->
+    <div id="modal-cliente" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300" id="modal-cliente-content">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/40 rounded-t-2xl">
+                <h3 class="text-2xl font-bold text-kgbGold"><i class="fa-solid fa-user-astronaut mr-2"></i> Ficha de Cliente</h3>
+                <button onclick="cerrarModalCliente()" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <form id="form-cliente" onsubmit="event.preventDefault(); guardarCliente();" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <input type="hidden" id="form-id">
+                
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nombre Completo</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="form-nombre" required placeholder="Nombre" class="w-1/2 p-3 input-3d rounded-lg">
+                        <input type="text" id="form-apellido" placeholder="Apellido (Opcional)" class="w-1/2 p-3 input-3d rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">WhatsApp (Números)</label>
+                    <div class="relative">
+                        <i class="fa-brands fa-whatsapp absolute left-3 top-3.5 text-green-500"></i>
+                        <input type="text" id="form-wa" required placeholder="51999888777" class="w-full pl-10 p-3 input-3d rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Plataforma</label>
+                    <select id="form-plat" required class="w-full p-3 input-3d rounded-lg appearance-none">
+                        <!-- Dinamico -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Vendedor</label>
+                    <select id="form-vend" class="w-full p-3 input-3d rounded-lg appearance-none">
+                        <option value="SIN_VENDEDOR">Sin Vendedor</option>
+                        <!-- Dinamico -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Fechas de Suscripción</label>
+                    <div class="flex gap-4">
+                        <div class="w-1/2 relative group">
+                            <span class="absolute -top-2 left-2 bg-kgbDark text-gray-500 text-[10px] px-1 font-bold z-10">INICIO</span>
+                            <i class="fa-solid fa-calendar-day absolute left-3 top-3.5 text-kgbGold group-hover:scale-110 transition-transform"></i>
+                            <input type="date" id="form-inicio" required class="w-full pl-10 p-3 input-3d rounded-lg cursor-pointer text-sm">
+                        </div>
+                        <div class="w-1/2 relative group">
+                            <span class="absolute -top-2 left-2 bg-kgbDark text-gray-500 text-[10px] px-1 font-bold z-10">VENCE</span>
+                            <i class="fa-solid fa-calendar-check absolute left-3 top-3.5 text-kgbGold group-hover:scale-110 transition-transform"></i>
+                            <input type="date" id="form-vence" required class="w-full pl-10 p-3 input-3d rounded-lg cursor-pointer text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2 pt-4 flex justify-end gap-4 border-t border-gray-800">
+                    <button type="button" onclick="cerrarModalCliente()" class="px-6 py-2 text-gray-400 font-bold hover:text-white transition">Cancelar</button>
+                    <button type="submit" class="bg-kgbGold text-black font-bold px-8 py-2 rounded-lg shadow-btn hover:bg-kgbGoldHover transition">
+                        Guardar Ficha
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Dashboard Genérico -->
+    <div id="modal-dash" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center hidden">
+        <div class="glass-panel w-full max-w-4xl rounded-2xl shadow-2xl p-6 border border-gray-700 h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-800">
+                <h3 class="text-2xl font-bold text-white" id="md-title">Detalle</h3>
+                <button onclick="document.getElementById('modal-dash').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-1">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-black/60 text-kgbGold text-xs uppercase sticky top-0"><tr id="md-head"></tr></thead>
+                    <tbody id="md-body" class="divide-y divide-gray-800"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT DEL SISTEMA CRM 3D              -->
+    <!-- ========================================== -->
+    <script>
+        // ================= CONFIGURACIÓN =================
+        
+        // ESTA ES TU URL ACTUALIZADA
+        const API_URL = "https://script.google.com/macros/s/AKfycbx9eNkCko-cG5G9UPy0Wo0YE-FAt04dfFy933uM4Ol5lH_7xEWSm-72x5gnR4bMt5xAXw/exec"; 
+
+        const State = {
+            config: {},
+            vendedores: [],
+            plataformas: [],
+            clientes: [],
+            plantillas: [],
+            historial: []
+        };
+
+        // ================= INICIALIZACIÓN =================
+        document.addEventListener('DOMContentLoaded', () => {
+            setInterval(() => {
+                const d = new Date();
+                const timeEl = document.getElementById('msg-preview-time');
+                if(timeEl) timeEl.textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }, 60000);
+
+            fetchData();
+        });
+
+        // ================= NAVEGACIÓN UI =================
+        function nav(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            const btn = document.querySelector(`.nav-link[onclick="nav('${tabId}')"]`);
+            if(btn) btn.classList.add('active');
+
+            if(window.innerWidth < 768) {
+                document.querySelector('aside').classList.add('hidden');
+            }
+        }
+
+        // ================= LÓGICA DE DATOS =================
+        async function fetchData() {
+            try {
+                const res = await fetch(API_URL);
+                const json = await res.json();
+                if(json.status === 'success') {
+                    Object.assign(State, json.data);
+                    procesarClientesCalc();
+                    renderAll();
+                    toast("Sistema Listo", "Datos sincronizados con Google Sheets", "success");
+                } else { throw new Error(json.message); }
+            } catch(e) {
+                toast("Error de red", "No se pudo conectar a la base de datos", "error");
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        async function apiPost(action, payload) {
+            document.getElementById('loader').style.display = 'flex';
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'text/plain'}, 
+                    body: JSON.stringify({action, payload})
+                });
+                const json = await res.json();
+                if(json.status === 'success') return json.data;
+                throw new Error(json.message);
+            } catch(e) {
+                toast("Error de operación", e.message, "error");
+                throw e;
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        function procesarClientesCalc() {
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+
+            State.clientes = State.clientes.map(c => {
+                const inicio = new Date(c.fecha_inicio);
+                const vence = new Date(c.fecha_vencimiento);
+                
+                vence.setMinutes(vence.getMinutes() + vence.getTimezoneOffset());
+                inicio.setMinutes(inicio.getMinutes() + inicio.getTimezoneOffset());
+
+                const diasFalt = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
+                const diasDesdeInicio = Math.ceil((hoy - inicio) / (1000 * 60 * 60 * 24));
+
+                let estado = 'Desconocido';
+                let textoDias = '';
+
+                if(diasFalt < 0) {
+                    estado = 'Vencido';
+                    textoDias = `Hace ${Math.abs(diasFalt)} días`;
+                } else if(diasFalt === 0) {
+                    estado = 'Vencido';
+                    textoDias = 'Vence HOY';
+                } else if(diasFalt <= 3) {
+                    estado = 'Por Vencer';
+                    textoDias = `En ${diasFalt} días`;
+                } else if(diasDesdeInicio <= 2) {
+                    estado = 'Recién comprado';
+                    textoDias = `En ${diasFalt} días`;
+                } else {
+                    estado = 'Activo';
+                    textoDias = `En ${diasFalt} días`;
+                }
+
+                return { ...c, dias_faltantes: diasFalt, texto_dias: textoDias, estado: estado };
+            });
+        }
+
+        // ================= RENDERIZADO =================
+        function renderAll() {
+            aplicarConfig();
+            renderDashboard();
+            poblarSelectsGlobales();
+            renderClientes();
+            renderSimpleTable('tbl-vendedores', State.vendedores, ['id_vendedor', 'nombre', 'whatsapp', 'estado']);
+            renderSimpleTable('tbl-plataformas', State.plataformas, ['id_plataforma', 'nombre_plataforma', 'estado', 'fecha_registro']);
+            renderSimpleTable('tbl-historial', State.historial.slice().reverse(), ['fecha_hora', 'nombre_cliente', 'plataforma', 'tipo_mensaje', 'estado_mensaje'], true);
+        }
+
+        function aplicarConfig() {
+            const c = State.config;
+            document.getElementById('ui-brand-name').textContent = c.nombre_negocio || 'KGB CRM';
+            document.title = (c.nombre_negocio || 'KGB') + ' - CRM';
+            
+            document.getElementById('conf-nombre').value = c.nombre_negocio || '';
+            document.getElementById('conf-resp').value = c.responsable || '';
+            document.getElementById('conf-firma').value = c.firma || '';
+            
+            // CORRECCION DEL #ERROR! DE SHEETS Y DE NUMEROS DEFAULT
+            let numAnt = String(c.numero_anterior || '');
+            let numNew = String(c.nuevo_numero_principal || '');
+
+            if(!numAnt || numAnt.includes('#ERROR') || numAnt.trim() === '') numAnt = '917309964';
+            if(!numNew || numNew.includes('#ERROR') || numNew.trim() === '') numNew = '902532240';
+
+            State.config.numero_anterior = numAnt;
+            State.config.nuevo_numero_principal = numNew;
+
+            document.getElementById('conf-nro_ant').value = numAnt;
+            document.getElementById('conf-nro_new').value = numNew;
+        }
+
+        function renderDashboard() {
+            const counts = { activos: 0, porVencer: 0, vencidos: 0 };
+            const proximos = [];
+            const nuevos = [...State.clientes].sort((a,b) => new Date(b.fecha_registro) - new Date(a.fecha_registro)).slice(0, 5);
+
+            State.clientes.forEach(c => {
+                if(c.estado === 'Activo' || c.estado === 'Recién comprado') counts.activos++;
+                if(c.estado === 'Por Vencer') { counts.porVencer++; proximos.push(c); }
+                if(c.estado === 'Vencido') counts.vencidos++;
+            });
+
+            document.getElementById('dash-activos').textContent = counts.activos;
+            document.getElementById('dash-porvencer').textContent = counts.porVencer;
+            document.getElementById('dash-vencidos').textContent = counts.vencidos;
+            document.getElementById('dash-total').textContent = State.clientes.length;
+            document.getElementById('dash-vendedores').textContent = State.vendedores.length;
+            document.getElementById('dash-plataformas').textContent = State.plataformas.length;
+
+            proximos.sort((a,b) => a.dias_faltantes - b.dias_faltantes);
+            
+            // Tablas mini
+            let tbVencer = '';
+            proximos.slice(0,5).forEach(c => {
+                let colorTexto = c.dias_faltantes < 0 ? 'text-red-500' : 'text-orange-400';
+                tbVencer += `<tr><td class="p-4 font-bold text-white">${c.nombre}</td><td class="p-4 text-gray-400">${c.plataforma}</td><td class="p-4 text-right font-bold ${colorTexto}">${c.texto_dias}</td></tr>`;
+            });
+            document.getElementById('tbl-dash-vencer').innerHTML = tbVencer || '<tr><td colspan="3" class="p-4 text-center text-gray-500">Todo en orden, jefe.</td></tr>';
+
+            let tbNuevos = '';
+            nuevos.forEach(c => {
+                tbNuevos += `<tr><td class="p-4 font-bold text-white">${c.nombre}</td><td class="p-4 text-gray-500 text-xs">${c.fecha_registro.split('T')[0]}</td><td class="p-4 text-right">${getBadge(c.estado)}</td></tr>`;
+            });
+            document.getElementById('tbl-dash-nuevos').innerHTML = tbNuevos;
+        }
+
+        function renderClientes() {
+            const tbody = document.getElementById('tbl-clientes');
+            const term = document.getElementById('filtro-buscar').value.toLowerCase();
+            const fEst = document.getElementById('filtro-estado').value;
+            const fPlat = document.getElementById('filtro-plataforma').value;
+
+            let filtrados = State.clientes.filter(c => {
+                const matchTexto = c.nombre.toLowerCase().includes(term) || c.whatsapp.includes(term) || (c.vendedor_nombre||'').toLowerCase().includes(term);
+                const matchEst = fEst === 'Todos' || c.estado === fEst;
+                const matchPlat = fPlat === 'Todas' || c.plataforma === fPlat;
+                return matchTexto && matchEst && matchPlat;
+            });
+
+            tbody.innerHTML = '';
+            filtrados.forEach(c => {
+                const vendNombre = State.vendedores.find(v => v.id_vendedor === c.vendedor_id)?.nombre || 'Sin Asignar';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="p-4">
+                            <p class="font-bold text-white">${c.nombre} ${c.apellido}</p>
+                            <p class="text-xs text-green-400"><i class="fa-brands fa-whatsapp mr-1"></i>${c.whatsapp}</p>
+                        </td>
+                        <td class="p-4"><span class="px-2 py-1 rounded bg-black border border-gray-700 text-kgbGold text-xs font-bold">${c.plataforma}</span></td>
+                        <td class="p-4 text-gray-400 text-sm"><i class="fa-solid fa-user-secret mr-1"></i>${vendNombre}</td>
+                        <td class="p-4 text-sm text-gray-300">
+                            ${c.fecha_vencimiento}
+                            <span class="block text-xs font-bold text-gray-500">${c.texto_dias}</span>
+                        </td>
+                        <td class="p-4 text-center">${getBadge(c.estado)}</td>
+                        <td class="p-4 text-center flex gap-2 justify-center">
+                            <button onclick="prepararMensajeRapido('${c.id_cliente}')" class="w-8 h-8 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition" title="Enviar WA"><i class="fa-brands fa-whatsapp"></i></button>
+                            <button onclick="cargarEditarCliente('${c.id_cliente}')" class="w-8 h-8 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarCliente('${c.id_cliente}')" class="w-8 h-8 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function getBadge(estado) {
+            let cl = '';
+            if(estado === 'Recién comprado') cl = 'status-recien';
+            else if(estado === 'Activo') cl = 'status-activo';
+            else if(estado === 'Por Vencer') cl = 'status-porvencer';
+            else if(estado === 'Vencido') cl = 'status-vencido';
+            return `<span class="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest ${cl}">${estado}</span>`;
+        }
+
+        function poblarSelectsGlobales() {
+            const fPlat = document.getElementById('filtro-plataforma');
+            fPlat.innerHTML = '<option value="Todas">Todas las Plat.</option>';
+            const frmPlat = document.getElementById('form-plat');
+            const frmVend = document.getElementById('form-vend');
+            frmPlat.innerHTML = '';
+            frmVend.innerHTML = '<option value="SIN_VENDEDOR">Sin Vendedor</option>';
+            const msgCli = document.getElementById('msg-cliente');
+            const msgVend = document.getElementById('msg-vendedor');
+            msgCli.innerHTML = '<option value="">-- Buscar cliente --</option>';
+            msgVend.innerHTML = '<option value="SIN_VENDEDOR">Sin Vendedor</option>';
+
+            State.plataformas.filter(p=>p.estado==='activo').forEach(p => {
+                fPlat.innerHTML += `<option value="${p.nombre_plataforma}">${p.nombre_plataforma}</option>`;
+                frmPlat.innerHTML += `<option value="${p.nombre_plataforma}">${p.nombre_plataforma}</option>`;
+            });
+
+            State.vendedores.filter(v=>v.estado==='activo').forEach(v => {
+                frmVend.innerHTML += `<option value="${v.id_vendedor}">${v.nombre} ${v.apellido}</option>`;
+                msgVend.innerHTML += `<option value="${v.id_vendedor}">${v.nombre} ${v.apellido}</option>`;
+            });
+
+            const cliOrd = [...State.clientes].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            cliOrd.forEach(c => {
+                const icono = c.estado === 'Activo' ? '🟢' : (c.estado==='Vencido' ? '🔴' : '🟡');
+                msgCli.innerHTML += `<option value="${c.id_cliente}">${icono} ${c.nombre} ${c.apellido} - ${c.plataforma} (${c.texto_dias})</option>`;
+            });
+        }
+
+        // ================= MENSAJERÍA =================
+        function onMsgClienteChange() {
+            const id = document.getElementById('msg-cliente').value;
+            if(!id) return limpiarPreview();
+            
+            const cli = State.clientes.find(c => c.id_cliente === id);
+            if(cli.vendedor_id) {
+                document.getElementById('msg-vendedor').value = cli.vendedor_id;
+            } else {
+                document.getElementById('msg-vendedor').value = "SIN_VENDEDOR";
+                document.getElementById('msg-tipo').value = "cliente_sin_vendedor";
+            }
+
+            if(!cli.nombre || cli.nombre.trim() === '') {
+                document.getElementById('msg-tipo').value = "cliente_sin_nombre";
+            }
+
+            cargarPlantillasXtipo();
+        }
+
+        function cargarPlantillasXtipo() {
+            const tipo = document.getElementById('msg-tipo').value;
+            const select = document.getElementById('msg-plantilla');
+            select.innerHTML = '';
+            
+            const filtradas = State.plantillas.filter(p => p.tipo_mensaje === tipo);
+            if(filtradas.length === 0) {
+                select.innerHTML = '<option value="">No hay plantillas de este tipo</option>';
+            } else {
+                filtradas.forEach(p => {
+                    select.innerHTML += `<option value="${p.id_plantilla}">${p.nombre_plantilla}</option>`;
+                });
+            }
+            generarPrevisualizacion();
+        }
+
+        function seleccionarPlantillaAleatoria() {
+            const select = document.getElementById('msg-plantilla');
+            const options = select.options;
+            if(options.length > 0) {
+                const random = Math.floor(Math.random() * options.length);
+                select.selectedIndex = random;
+                generarPrevisualizacion();
+            }
+        }
+
+        function generarPrevisualizacion() {
+            const cliId = document.getElementById('msg-cliente').value;
+            const tId = document.getElementById('msg-plantilla').value;
+            const vendId = document.getElementById('msg-vendedor').value;
+            
+            if(!cliId || !tId) return limpiarPreview();
+
+            const cli = State.clientes.find(c => c.id_cliente === cliId);
+            const vend = State.vendedores.find(v => v.id_vendedor === vendId) || {};
+            const plan = State.plantillas.find(p => p.id_plantilla === tId);
+            const conf = State.config;
+
+            let txt = plan.contenido;
+
+            if(vendId === 'SIN_VENDEDOR') {
+                txt = txt.replace(/\[vendedor_bloque\]/g, ''); 
+            } else {
+                txt = txt.replace(/\[vendedor_bloque\]/g, `Tu vendedor *${vend.nombre}* nos informa que `);
+            }
+
+            // AQUI SE USAN LOS NUMEROS SEGUROS CORREGIDOS PREVIAMENTE E INCORPORAMOS dias_vencidos
+            const vars = {
+                '\\[nombre_cliente\\]': `*${cli.nombre}*`,
+                '\\[apellido_cliente\\]': cli.apellido,
+                '\\[plataforma\\]': `*${cli.plataforma}*`,
+                '\\[dias_faltantes\\]': cli.dias_faltantes > 0 ? cli.dias_faltantes : 0,
+                '\\[dias_vencidos\\]': cli.dias_faltantes < 0 ? Math.abs(cli.dias_faltantes) : 0,
+                '\\[nuevo_numero_principal\\]': conf.nuevo_numero_principal || '902532240',
+                '\\[numero_anterior\\]': conf.numero_anterior || '917309964',
+                '\\[nombre_negocio\\]': conf.nombre_negocio || 'KGB Streaming',
+                '\\[firma\\]': `_${conf.firma || 'Atentamente'}_`
+            };
+
+            for (const [key, value] of Object.entries(vars)) {
+                txt = txt.replace(new RegExp(key, 'g'), value || '');
+            }
+
+            document.getElementById('msg-textarea').value = txt;
+            updatePreviewFromTextarea();
+        }
+
+        function updatePreviewFromTextarea() {
+            const val = document.getElementById('msg-textarea').value;
+            const htmlFormat = val.replace(/\*(.*?)\*/g, '<b>$1</b>').replace(/_(.*?)_/g, '<i>$1</i>');
+            document.getElementById('msg-preview-html').innerHTML = htmlFormat || 'Escribe algo...';
+            document.getElementById('btn-wa').disabled = val.trim().length === 0;
+        }
+
+        function limpiarPreview() {
+            document.getElementById('msg-textarea').value = '';
+            document.getElementById('msg-preview-html').innerHTML = 'Selecciona un cliente...';
+            document.getElementById('btn-wa').disabled = true;
+        }
+
+        // SALTO DIRECTO DEL MODAL DASHBOARD AL MENSAJE PREPARADO
+        function prepararMensajeRapido(id_cliente) {
+            document.getElementById('modal-dash').classList.add('hidden'); 
+            nav('mensajes');
+            document.getElementById('msg-cliente').value = id_cliente;
+            onMsgClienteChange();
+            seleccionarPlantillaAleatoria(); 
+        }
+
+        function abrirWA() {
+            const cId = document.getElementById('msg-cliente').value;
+            const msg = document.getElementById('msg-textarea').value;
+            if(!cId || !msg) return;
+            const c = State.clientes.find(x => x.id_cliente === cId);
+            const num = c.whatsapp.replace(/\D/g, '');
+            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function copiarMensaje() {
+            const val = document.getElementById('msg-textarea').value;
+            navigator.clipboard.writeText(val);
+            toast("Copiado", "Mensaje copiado al portapapeles", "success");
+        }
+
+        async function marcarComoEnviado() {
+            const cId = document.getElementById('msg-cliente').value;
+            if(!cId) return;
+            const c = State.clientes.find(x => x.id_cliente === cId);
+            
+            const payload = {
+                id_cliente: cId,
+                nombre_cliente: c.nombre,
+                whatsapp_cliente: c.whatsapp,
+                plataforma: c.plataforma,
+                tipo_mensaje: document.getElementById('msg-tipo').value,
+                estado_mensaje: 'Enviado Manual',
+                responsable: State.config.responsable
+            };
+
+            try {
+                const nLog = await apiPost('addHistorial', payload);
+                State.historial.push(nLog);
+                renderAll();
+                toast("Registrado", "Envío guardado en historial", "success");
+            } catch(e) {}
+        }
+
+        // ================= CLIENTES CRUD =================
+        function abrirModalCliente() {
+            document.getElementById('form-cliente').reset();
+            document.getElementById('form-id').value = '';
+            const m = document.getElementById('modal-cliente');
+            const mc = document.getElementById('modal-cliente-content');
+            m.classList.remove('hidden');
+            setTimeout(() => { m.classList.remove('opacity-0'); mc.classList.remove('scale-95'); }, 10);
+        }
+
+        function cerrarModalCliente() {
+            const m = document.getElementById('modal-cliente');
+            const mc = document.getElementById('modal-cliente-content');
+            m.classList.add('opacity-0'); mc.classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
+        async function guardarCliente() {
+            const id = document.getElementById('form-id').value;
+            const payload = {
+                nombre: document.getElementById('form-nombre').value,
+                apellido: document.getElementById('form-apellido').value,
+                whatsapp: document.getElementById('form-wa').value.replace(/\D/g, ''),
+                plataforma: document.getElementById('form-plat').value,
+                vendedor_id: document.getElementById('form-vend').value === 'SIN_VENDEDOR' ? '' : document.getElementById('form-vend').value,
+                fecha_inicio: document.getElementById('form-inicio').value,
+                fecha_vencimiento: document.getElementById('form-vence').value
+            };
+
+            try {
+                if(id) {
+                    payload.id_cliente = id;
+                    const act = await apiPost('editCliente', payload);
+                    const idx = State.clientes.findIndex(c => c.id_cliente === id);
+                    State.clientes[idx] = {...State.clientes[idx], ...act};
+                    toast("Actualizado", "Cliente actualizado con éxito", "success");
+                } else {
+                    const nuevo = await apiPost('addCliente', payload);
+                    State.clientes.push(nuevo);
+                    toast("Guardado", "Cliente registrado con éxito", "success");
+                }
+                cerrarModalCliente();
+                procesarClientesCalc();
+                renderAll();
+            } catch(e) {}
+        }
+
+        function cargarEditarCliente(id) {
+            const c = State.clientes.find(x => x.id_cliente === id);
+            document.getElementById('form-id').value = c.id_cliente;
+            document.getElementById('form-nombre').value = c.nombre;
+            document.getElementById('form-apellido').value = c.apellido;
+            document.getElementById('form-wa').value = c.whatsapp;
+            document.getElementById('form-plat').value = c.plataforma;
+            document.getElementById('form-vend').value = c.vendedor_id || 'SIN_VENDEDOR';
+            document.getElementById('form-inicio').value = c.fecha_inicio.split('T')[0];
+            document.getElementById('form-vence').value = c.fecha_vencimiento.split('T')[0];
+            abrirModalCliente();
+        }
+
+        async function eliminarCliente(id) {
+            if(!confirm("¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.")) return;
+            try {
+                await apiPost('deleteCliente', {id});
+                State.clientes = State.clientes.filter(c => c.id_cliente !== id);
+                renderAll();
+                toast("Eliminado", "Cliente borrado", "success");
+            } catch(e) {}
+        }
+
+        async function guardarConfig() {
+            const payload = {
+                nombre_negocio: document.getElementById('conf-nombre').value,
+                responsable: document.getElementById('conf-resp').value,
+                firma: document.getElementById('conf-firma').value,
+                numero_anterior: document.getElementById('conf-nro_ant').value,
+                nuevo_numero_principal: document.getElementById('conf-nro_new').value
+            };
+            try {
+                const nConf = await apiPost('saveConfig', payload);
+                State.config = nConf;
+                aplicarConfig();
+                toast("Guardado", "Configuración de Core actualizada", "success");
+            } catch(e){}
+        }
+
+        // ================= HELPERS UI =================
+        function renderSimpleTable(tbodyId, dataArray, cols, showDate=false) {
+            const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            dataArray.forEach(d => {
+                let row = '<tr class="hover:bg-white/5 transition">';
+                cols.forEach(c => {
+                    let val = d[c] || '-';
+                    if(c.includes('fecha') && val.includes('T')) val = val.split('T')[0];
+                    if(c === 'estado') val = `<span class="text-[10px] uppercase font-bold text-kgbGold">${val}</span>`;
+                    row += `<td class="p-4">${val}</td>`;
+                });
+                row += '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        // CORRECCION: MODAL CON LA COLUMNA DE BOTON DE WHATSAPP
+        function abrirModalDashboard(tipo) {
+            const m = document.getElementById('modal-dash');
+            document.getElementById('md-title').textContent = "Detalle: " + tipo;
+            let htHead = '<th>Cliente</th><th>WA</th><th>Vence</th><th>Estado</th><th class="text-center">Acción</th>';
+            let htBody = '';
+            
+            let clientesFiltrados = State.clientes.filter(c => {
+                if(tipo === 'Activos') return c.estado === 'Activo' || c.estado === 'Recién comprado';
+                if(tipo === 'Vencidos') return c.estado === 'Vencido';
+                return c.estado === tipo; 
+            });
+            
+            clientesFiltrados.forEach(c => {
+                htBody += `<tr class="hover:bg-white/5">
+                    <td class="p-4 font-bold text-white">${c.nombre}</td>
+                    <td class="p-4 text-gray-400">${c.whatsapp}</td>
+                    <td class="p-4 text-gray-400">${c.fecha_vencimiento}</td>
+                    <td class="p-4">${getBadge(c.estado)}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="prepararMensajeRapido('${c.id_cliente}')" class="w-8 h-8 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition shadow-btn" title="Preparar WhatsApp">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            document.getElementById('md-head').innerHTML = htHead;
+            document.getElementById('md-body').innerHTML = htBody || '<tr><td colspan="5" class="p-8 text-center text-gray-500">No hay registros en esta categoría.</td></tr>';
+            m.classList.remove('hidden');
+        }
+
+        function toast(title, msg, type) {
+            const box = document.getElementById('toast-box');
+            let bg = 'bg-gray-800 border-gray-700 text-white';
+            let icon = '<i class="fa-solid fa-info-circle text-blue-400"></i>';
+            if(type==='success') { bg = 'bg-green-900 border-green-700 text-green-100'; icon = '<i class="fa-solid fa-check-circle text-green-400"></i>'; }
+            if(type==='error') { bg = 'bg-red-900 border-red-700 text-red-100'; icon = '<i class="fa-solid fa-triangle-exclamation text-red-400"></i>'; }
+
+            const el = document.createElement('div');
+            el.className = `${bg} border p-4 rounded-xl shadow-2xl flex items-start gap-3 min-w-[300px] transform transition-all duration-300 translate-x-full`;
+            el.innerHTML = `${icon}<div><h4 class="font-bold text-sm leading-tight">${title}</h4><p class="text-xs opacity-80 mt-1">${msg}</p></div>`;
+            box.appendChild(el);
+            
+            setTimeout(()=> el.classList.remove('translate-x-full'), 10);
+            setTimeout(()=> {
+                el.classList.add('opacity-0');
+                setTimeout(()=>el.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
