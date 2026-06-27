@@ -46,7 +46,7 @@
                 radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
             color: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Prevent body scroll, manage in content area */
+            overflow: hidden; 
         }
 
         .glass-panel {
@@ -107,101 +107,59 @@
         }
 
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(212, 175, 55, 0.5);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 175, 55, 0.8);
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.8); }
 
-        /* Sidebar active link */
         .nav-item.active {
             background: linear-gradient(90deg, rgba(212,175,55,0.2) 0%, transparent 100%);
             border-left: 3px solid #D4AF37;
             color: #D4AF37;
         }
 
-        /* Tables */
-        .glass-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        .glass-table th {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 12px;
-            text-align: left;
-            font-size: 0.875rem;
-            color: #a1a1aa;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .glass-table td {
-            padding: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.9rem;
-        }
-        .glass-table tr:hover td {
-            background: rgba(255,255,255,0.02);
-        }
+        .glass-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .glass-table th { background: rgba(0, 0, 0, 0.4); padding: 12px; text-align: left; font-size: 0.875rem; color: #a1a1aa; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+        .glass-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .glass-table tr:hover td { background: rgba(255,255,255,0.02); }
 
-        /* 3D Status Badges */
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2); }
         .badge-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
         .badge-yellow { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
         .badge-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
         .badge-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
         .badge-gray { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
 
-        /* Loader */
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            border-top: 3px solid #D4AF37;
-            width: 24px;
-            height: 24px;
-            -webkit-animation: spin 1s linear infinite;
-            animation: spin 1s linear infinite;
-        }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top: 3px solid #D4AF37; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Hide elements */
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="flex h-screen w-full">
+<body class="flex h-screen w-full relative">
 
     <!-- Global Loader -->
-    <div id="globalLoader" class="fixed inset-0 bg-black/80 z-50 flex flex-col justify-center items-center hidden backdrop-blur-sm">
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 z-[9999] flex flex-col justify-center items-center hidden backdrop-blur-sm">
         <div class="loader mb-4" style="width: 50px; height: 50px; border-width: 4px;"></div>
         <p class="text-gold font-semibold animate-pulse" id="loaderText">Cargando...</p>
     </div>
 
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black/70 z-30 hidden backdrop-blur-sm transition-opacity md:hidden" onclick="app.toggleSidebar()"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 flex-shrink-0 glass-panel border-l-0 border-t-0 border-b-0 rounded-none flex flex-col relative z-20">
-        <div class="p-6 flex items-center gap-3 border-b border-white/10">
+    <aside id="mainSidebar" class="fixed inset-y-0 left-0 w-64 glass-panel border-l-0 border-t-0 border-b-0 rounded-none flex flex-col z-40 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex-shrink-0">
+        <!-- Close button for mobile -->
+        <button class="md:hidden absolute top-5 right-4 text-gray-400 hover:text-white" onclick="app.toggleSidebar()">
+            <i class="fa-solid fa-times text-xl"></i>
+        </button>
+
+        <div class="p-6 flex items-center gap-3 border-b border-white/10 mt-2 md:mt-0">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center shadow-gold">
                 <i class="fa-solid fa-microchip text-dark text-xl"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-tight tracking-wide">CRM<br><span class="text-gold text-sm">Contactos Técnicos</span></h1>
+                <h1 class="font-bold text-lg leading-tight tracking-wide">CRM<br><span class="text-gold text-sm">Contactos</span></h1>
             </div>
         </div>
         
@@ -210,7 +168,7 @@
                 <li><a href="#" onclick="app.navigate('dashboard')" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard</a></li>
                 <li><a href="#" onclick="app.navigate('import')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-file-import w-5 text-center"></i> Importar CSV</a></li>
                 <li><a href="#" onclick="app.navigate('contacts')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-users w-5 text-center"></i> Contactos</a></li>
-                <li><a href="#" onclick="app.navigate('messages')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-brands fa-whatsapp w-5 text-center"></i> Generar Mensaje</a></li>
+                <li><a href="#" onclick="app.navigate('messages')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-brands fa-whatsapp w-5 text-center text-green-400"></i> Generar Mensaje</a></li>
                 <li class="my-2 border-t border-white/5"></li>
                 <li><a href="#" onclick="app.navigate('services')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-tools w-5 text-center"></i> Servicios</a></li>
                 <li><a href="#" onclick="app.navigate('templates')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"><i class="fa-solid fa-scroll w-5 text-center"></i> Plantillas</a></li>
@@ -226,12 +184,18 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <main class="flex-1 flex flex-col h-full overflow-hidden w-full relative z-10">
         <!-- Header -->
-        <header class="h-16 flex-shrink-0 glass-panel border-x-0 border-t-0 rounded-none flex items-center justify-between px-6 z-10">
-            <h2 id="pageTitle" class="text-xl font-semibold text-gold">Dashboard</h2>
+        <header class="h-16 flex-shrink-0 glass-panel border-x-0 border-t-0 rounded-none flex items-center justify-between px-4 lg:px-6 z-10">
+            <div class="flex items-center gap-3">
+                <!-- Hamburger Menu Button (Mobile Only) -->
+                <button id="mobileMenuBtn" class="md:hidden text-gold text-2xl focus:outline-none bg-white/5 p-2 rounded-lg" onclick="app.toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h2 id="pageTitle" class="text-lg lg:text-xl font-semibold text-gold">Dashboard</h2>
+            </div>
             <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400" id="headerBusinessName">Cargando...</span>
+                <span class="text-xs lg:text-sm text-gray-400 hidden sm:block" id="headerBusinessName">Cargando...</span>
                 <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                     <i class="fa-solid fa-user text-sm"></i>
                 </div>
@@ -239,58 +203,58 @@
         </header>
 
         <!-- Dynamic Content Area -->
-        <div class="flex-1 overflow-y-auto p-6" id="contentArea">
+        <div class="flex-1 overflow-y-auto p-4 lg:p-6" id="contentArea">
             
             <!-- VIEW: DASHBOARD -->
-            <div id="view-dashboard" class="flex flex-col gap-6 h-full pb-6">
+            <div id="view-dashboard" class="flex flex-col gap-4 lg:gap-6 h-full pb-6">
                 <!-- KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 flex-shrink-0">
-                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6 flex-shrink-0">
+                    <div class="glass-panel p-4 lg:p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
                         <div>
-                            <p class="text-sm text-gray-400 font-medium mb-2">Total Contactos</p>
-                            <h3 class="text-3xl font-bold text-white" id="dashTotalContacts">0</h3>
+                            <p class="text-xs lg:text-sm text-gray-400 font-medium mb-1 lg:mb-2">Total Contactos</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-white" id="dashTotalContacts">0</h3>
                         </div>
-                        <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                        <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl lg:text-2xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                             <i class="fa-solid fa-users"></i>
                         </div>
                     </div>
-                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                    <div class="glass-panel p-4 lg:p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
                         <div>
-                            <p class="text-sm text-gray-400 font-medium mb-2">Mensajes (Hoy)</p>
-                            <h3 class="text-3xl font-bold text-white" id="dashMsgsToday">0</h3>
+                            <p class="text-xs lg:text-sm text-gray-400 font-medium mb-1 lg:mb-2">Mensajes (Hoy)</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-white" id="dashMsgsToday">0</h3>
                         </div>
-                        <div class="w-14 h-14 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center text-2xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+                        <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center text-xl lg:text-2xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.15)]">
                             <i class="fa-brands fa-whatsapp"></i>
                         </div>
                     </div>
-                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                    <div class="glass-panel p-4 lg:p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
                         <div>
-                            <p class="text-sm text-gray-400 font-medium mb-2">Sin Servicio</p>
-                            <h3 class="text-3xl font-bold text-white" id="dashNoService">0</h3>
+                            <p class="text-xs lg:text-sm text-gray-400 font-medium mb-1 lg:mb-2">Sin Servicio</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-white" id="dashNoService">0</h3>
                         </div>
-                        <div class="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center text-2xl border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
+                        <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center text-xl lg:text-2xl border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
                             <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                     </div>
-                    <div class="glass-panel p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
+                    <div class="glass-panel p-4 lg:p-6 flex items-center justify-between cursor-pointer hover:-translate-y-1 transition-transform" onclick="app.navigate('contacts')">
                         <div>
-                            <p class="text-sm text-gray-400 font-medium mb-2">Pendientes</p>
-                            <h3 class="text-3xl font-bold text-white" id="dashPendingMsg">0</h3>
+                            <p class="text-xs lg:text-sm text-gray-400 font-medium mb-1 lg:mb-2">Pendientes</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-white" id="dashPendingMsg">0</h3>
                         </div>
-                        <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center text-2xl border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+                        <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center text-xl lg:text-2xl border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]">
                             <i class="fa-solid fa-clock"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[350px]">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 flex-1 lg:min-h-[350px]">
                     <!-- Recent Contacts -->
-                    <div class="glass-panel p-6 flex flex-col h-full">
-                        <div class="flex justify-between items-center mb-5 flex-shrink-0">
-                            <h3 class="font-semibold text-lg text-gold flex items-center"><i class="fa-solid fa-user-plus mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Importados</h3>
-                            <button onclick="app.navigate('contacts')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors">Ver todos</button>
+                    <div class="glass-panel p-4 lg:p-6 flex flex-col h-[350px] lg:h-full">
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h3 class="font-semibold text-base lg:text-lg text-gold flex items-center"><i class="fa-solid fa-user-plus mr-2 lg:mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Importados</h3>
+                            <button onclick="app.navigate('contacts')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-md transition-colors">Todos</button>
                         </div>
-                        <div class="overflow-y-auto flex-1 pr-2">
+                        <div class="overflow-y-auto overflow-x-auto flex-1 pr-2">
                             <table class="glass-table">
                                 <thead>
                                     <tr>
@@ -307,12 +271,12 @@
                     </div>
                     
                     <!-- Recent Messages -->
-                    <div class="glass-panel p-6 flex flex-col h-full">
-                        <div class="flex justify-between items-center mb-5 flex-shrink-0">
-                            <h3 class="font-semibold text-lg text-gold flex items-center"><i class="fa-solid fa-paper-plane mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Mensajes</h3>
-                            <button onclick="app.navigate('history')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors">Ver historial</button>
+                    <div class="glass-panel p-4 lg:p-6 flex flex-col h-[350px] lg:h-full">
+                        <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                            <h3 class="font-semibold text-base lg:text-lg text-gold flex items-center"><i class="fa-solid fa-paper-plane mr-2 lg:mr-3 bg-white/5 p-2 rounded-lg"></i> Últimos Mensajes</h3>
+                            <button onclick="app.navigate('history')" class="text-xs text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-md transition-colors">Historial</button>
                         </div>
-                        <div class="overflow-y-auto flex-1 pr-2">
+                        <div class="overflow-y-auto overflow-x-auto flex-1 pr-2">
                             <table class="glass-table">
                                 <thead>
                                     <tr>
@@ -332,25 +296,25 @@
 
             <!-- VIEW: IMPORT CSV -->
             <div id="view-import" class="hidden h-full flex flex-col">
-                <div class="glass-panel p-6 mb-6 flex-shrink-0">
-                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div class="flex-1">
+                <div class="glass-panel p-4 lg:p-6 mb-4 lg:mb-6 flex-shrink-0">
+                    <div class="flex flex-col gap-4">
+                        <div>
                             <h3 class="text-lg font-semibold mb-2">Importar desde Google Contacts</h3>
-                            <p class="text-sm text-gray-400 mb-4">Seleccione un archivo CSV exportado directamente desde Google Contacts. El sistema detectará automáticamente los números de teléfono, limpiará formatos y añadirá el código de país (51 para Perú) si es necesario.</p>
+                            <p class="text-xs lg:text-sm text-gray-400 mb-4">Seleccione un archivo CSV exportado desde Google Contacts. Detectará los números, limpiará formatos y añadirá el código 51.</p>
                             
-                            <div class="flex items-center gap-4">
-                                <label class="glass-button cursor-pointer inline-flex items-center gap-2">
-                                    <i class="fa-solid fa-file-csv"></i> Seleccionar Archivo
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <label class="glass-button cursor-pointer inline-flex items-center justify-center gap-2 text-center w-full sm:w-auto">
+                                    <i class="fa-solid fa-file-csv"></i> Seleccionar CSV
                                     <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importModule.handleFileSelect(event)">
                                 </label>
-                                <span id="fileNameDisplay" class="text-sm text-gray-400">Ningún archivo seleccionado</span>
+                                <span id="fileNameDisplay" class="text-xs text-gray-400 text-center sm:text-left">Ningún archivo seleccionado</span>
                             </div>
                         </div>
-                        <div class="flex gap-2 flex-col sm:flex-row">
-                            <button class="glass-button-secondary rounded-lg px-4 py-2 flex items-center gap-2" onclick="importModule.downloadTemplate()">
+                        <div class="flex flex-col sm:flex-row gap-2 mt-2 pt-4 border-t border-white/10">
+                            <button class="glass-button-secondary rounded-lg px-4 py-2 flex items-center justify-center gap-2 w-full sm:w-auto" onclick="importModule.downloadTemplate()">
                                 <i class="fa-solid fa-download"></i> CSV Ejemplo
                             </button>
-                            <button class="glass-button rounded-lg px-4 py-2 flex items-center gap-2 opacity-50 cursor-not-allowed" id="btnProcessImport" onclick="importModule.processImport()" disabled>
+                            <button class="glass-button rounded-lg px-4 py-2 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed w-full sm:w-auto" id="btnProcessImport" onclick="importModule.processImport()" disabled>
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Importar Datos
                             </button>
                         </div>
@@ -358,12 +322,12 @@
                 </div>
 
                 <div class="glass-panel flex-1 flex flex-col overflow-hidden hidden" id="importPreviewContainer">
-                    <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
-                        <h3 class="font-semibold text-gold">Vista Previa de Datos <span id="previewCount" class="text-sm text-white bg-white/20 px-2 rounded-full ml-2">0</span></h3>
-                        <div class="flex gap-4 text-sm">
-                            <span class="text-green-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countNew">0</span> Nuevos</span>
-                            <span class="text-yellow-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countUpdate">0</span> Actualizar</span>
-                            <span class="text-red-400"><i class="fa-solid fa-circle text-[10px]"></i> <span id="countNoNum">0</span> Sin Número</span>
+                    <div class="p-3 lg:p-4 border-b border-white/10 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-black/20 gap-2">
+                        <h3 class="font-semibold text-gold text-sm lg:text-base">Vista Previa <span id="previewCount" class="text-xs text-white bg-white/20 px-2 rounded-full ml-2">0</span></h3>
+                        <div class="flex gap-3 text-xs flex-wrap">
+                            <span class="text-green-400"><i class="fa-solid fa-circle text-[8px]"></i> <span id="countNew">0</span> Nuevos</span>
+                            <span class="text-yellow-400"><i class="fa-solid fa-circle text-[8px]"></i> <span id="countUpdate">0</span> Actualizar</span>
+                            <span class="text-red-400"><i class="fa-solid fa-circle text-[8px]"></i> <span id="countNoNum">0</span> Sin Num</span>
                         </div>
                     </div>
                     <div class="flex-1 overflow-auto">
@@ -372,12 +336,11 @@
                                 <tr>
                                     <th>Nombre Completo</th>
                                     <th>WhatsApp Principal</th>
-                                    <th>Empresa</th>
-                                    <th>Estado Importación</th>
+                                    <th class="hidden sm:table-cell">Empresa</th>
+                                    <th>Estado</th>
                                 </tr>
                             </thead>
                             <tbody id="importPreviewTable">
-                                <!-- Filas de preview generadas por JS -->
                             </tbody>
                         </table>
                     </div>
@@ -386,30 +349,31 @@
 
             <!-- VIEW: CONTACTS -->
             <div id="view-contacts" class="hidden h-full flex flex-col">
-                <div class="glass-panel p-4 mb-4 flex-shrink-0 flex flex-wrap gap-4 items-center justify-between">
-                    <div class="flex gap-2 flex-wrap items-center">
-                        <div class="relative">
+                <div class="glass-panel p-4 mb-4 flex-shrink-0 flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
+                    <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <div class="relative w-full sm:w-64">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" id="searchContacts" placeholder="Buscar nombre, número..." class="glass-input pl-10 w-64 text-sm" onkeyup="contactsModule.filter()">
+                            <input type="text" id="searchContacts" placeholder="Buscar..." class="glass-input pl-10 w-full text-sm" onkeyup="contactsModule.filter()">
                         </div>
-                        <select id="filterState" class="glass-input w-40 text-sm" onchange="contactsModule.filter()">
-                            <option value="">Todos los Estados</option>
-                            <option value="Nuevo">Nuevo</option>
-                            <option value="Contactado">Contactado</option>
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Sin WhatsApp">Sin WhatsApp</option>
-                        </select>
-                        <select id="filterService" class="glass-input w-48 text-sm" onchange="contactsModule.filter()">
-                            <option value="">Cualquier Servicio</option>
-                            <!-- Services populated via JS -->
-                        </select>
+                        <div class="flex gap-2 w-full">
+                            <select id="filterState" class="glass-input flex-1 text-sm" onchange="contactsModule.filter()">
+                                <option value="">Todos</option>
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Contactado">Contactado</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Sin WhatsApp">Sin WhatsApp</option>
+                            </select>
+                            <select id="filterService" class="glass-input flex-1 text-sm" onchange="contactsModule.filter()">
+                                <option value="">Servicios</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button class="glass-button-secondary flex items-center gap-2 text-sm" onclick="contactsModule.exportCSV()">
-                            <i class="fa-solid fa-file-export"></i> Exportar CSV
+                    <div class="flex gap-2 w-full lg:w-auto">
+                        <button class="glass-button-secondary flex-1 lg:flex-none justify-center flex items-center gap-2 text-sm" onclick="contactsModule.exportCSV()">
+                            <i class="fa-solid fa-file-export"></i> CSV
                         </button>
-                        <button class="glass-button flex items-center gap-2 text-sm" onclick="contactsModule.openModal()">
-                            <i class="fa-solid fa-plus"></i> Nuevo Contacto
+                        <button class="glass-button flex-1 lg:flex-none justify-center flex items-center gap-2 text-sm" onclick="contactsModule.openModal()">
+                            <i class="fa-solid fa-plus"></i> Nuevo
                         </button>
                     </div>
                 </div>
@@ -421,103 +385,94 @@
                                 <tr>
                                     <th>Contacto</th>
                                     <th>WhatsApp</th>
-                                    <th>Servicio Asignado</th>
-                                    <th>Estado</th>
-                                    <th class="text-right">Acciones</th>
+                                    <th class="hidden md:table-cell">Servicio</th>
+                                    <th class="hidden sm:table-cell">Estado</th>
+                                    <th class="text-right">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="contactsTableBody">
-                                <!-- Filas generadas por JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- VIEW: MESSAGES (Generador) -->
-            <div id="view-messages" class="hidden h-full">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+            <!-- VIEW: MESSAGES (Generador - OPTIMIZADO PARA MÓVIL) -->
+            <div id="view-messages" class="hidden flex flex-col lg:flex-row gap-4 lg:gap-6 h-full overflow-y-auto lg:overflow-hidden pb-10 lg:pb-0">
+                
+                <!-- Left: Form -->
+                <div class="w-full lg:w-5/12 flex flex-col gap-4 lg:overflow-y-auto pr-0 lg:pr-2 flex-shrink-0">
                     
-                    <!-- Left: Form -->
-                    <div class="lg:col-span-5 flex flex-col gap-4 overflow-y-auto pr-2 pb-10">
-                        
-                        <!-- Select Contact -->
-                        <div class="glass-panel p-5">
-                            <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-user mr-2"></i>1. Seleccionar Contacto</label>
-                            <div class="relative">
-                                <input type="text" id="msgSearchContact" placeholder="Buscar contacto..." class="glass-input mb-2" onkeyup="messagesModule.filterContactsDropdown()" autocomplete="off">
-                                <div id="msgContactDropdown" class="absolute z-30 w-full glass-panel max-h-48 overflow-y-auto hidden">
-                                    <!-- Options generated by JS -->
-                                </div>
-                            </div>
-                            
-                            <div id="msgSelectedContactCard" class="mt-3 p-3 bg-white/5 border border-white/10 rounded-lg hidden relative">
-                                <button onclick="messagesModule.clearContact()" class="absolute top-2 right-2 text-gray-400 hover:text-red-400"><i class="fa-solid fa-times"></i></button>
-                                <h4 id="msgCardName" class="font-bold text-white">Nombre</h4>
-                                <p id="msgCardPhone" class="text-sm text-gray-400">Phone</p>
-                                <div class="mt-2 text-xs">
-                                    <span class="text-gold">Servicio actual:</span> <span id="msgCardService" class="text-gray-300">Ninguno</span>
-                                </div>
+                    <!-- Select Contact -->
+                    <div class="glass-panel p-4">
+                        <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-user mr-2"></i>1. Seleccionar Contacto</label>
+                        <div class="relative">
+                            <input type="text" id="msgSearchContact" placeholder="Buscar contacto..." class="glass-input mb-2" onkeyup="messagesModule.filterContactsDropdown()" autocomplete="off">
+                            <div id="msgContactDropdown" class="absolute z-30 w-full glass-panel max-h-48 overflow-y-auto hidden shadow-xl border border-gold/30">
                             </div>
                         </div>
-
-                        <!-- Select Intent / Template -->
-                        <div class="glass-panel p-5">
-                            <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-lightbulb mr-2"></i>2. Intención y Plantilla</label>
-                            
-                            <select id="msgIntentSelect" class="glass-input mb-3" onchange="messagesModule.filterTemplates()">
-                                <option value="">-- Seleccionar Categoría --</option>
-                                <option value="Cambio de número">Avisar cambio de número</option>
-                                <option value="Impresoras">Impresoras</option>
-                                <option value="Computadoras y Laptops">Computadoras y Laptops</option>
-                                <option value="Cámaras y Redes">Cámaras y Redes</option>
-                                <option value="General">Soporte General / Otros</option>
-                            </select>
-
-                            <select id="msgTemplateSelect" class="glass-input" onchange="messagesModule.generatePreview()">
-                                <option value="">-- Seleccionar Plantilla --</option>
-                                <!-- Templates generated by JS -->
-                            </select>
-                        </div>
                         
-                        <!-- Manual Service Override -->
-                        <div class="glass-panel p-5">
-                             <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-tools mr-2"></i>3. Servicio a Mencionar (Opcional)</label>
-                             <select id="msgServiceSelect" class="glass-input text-sm" onchange="messagesModule.generatePreview()">
-                                <option value="">Usar servicio asignado al contacto</option>
-                                <!-- Services generated by JS -->
-                            </select>
+                        <div id="msgSelectedContactCard" class="mt-2 p-3 bg-white/5 border border-white/10 rounded-lg hidden relative">
+                            <button onclick="messagesModule.clearContact()" class="absolute top-2 right-2 text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-times text-lg"></i></button>
+                            <h4 id="msgCardName" class="font-bold text-white text-base pr-6">Nombre</h4>
+                            <p id="msgCardPhone" class="text-sm text-green-400 mt-1 font-medium">Phone</p>
+                            <div class="mt-2 text-xs bg-black/20 p-2 rounded">
+                                <span class="text-gray-400">Servicio actual:</span> <span id="msgCardService" class="text-gold font-medium">Ninguno</span>
+                            </div>
                         </div>
-
                     </div>
 
-                    <!-- Right: Preview & Actions -->
-                    <div class="lg:col-span-7 flex flex-col gap-4 h-full">
-                        <div class="glass-panel p-5 flex-1 flex flex-col relative overflow-hidden">
-                            <!-- WhatsApp Background pattern -->
-                            <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: url('https://w0.peakpx.com/wallpaper/818/148/HD-wallpaper-whatsapp-background-solid-color-dark.jpg'); background-size: cover;"></div>
-                            
-                            <div class="relative z-10 flex justify-between items-center mb-4 border-b border-white/10 pb-3">
-                                <h3 class="font-semibold text-green-400"><i class="fa-brands fa-whatsapp mr-2"></i>Vista Previa del Mensaje</h3>
-                                <div class="flex gap-2">
-                                    <button class="text-xs glass-button-secondary px-2 py-1 rounded" onclick="messagesModule.copyText()"><i class="fa-regular fa-copy"></i> Copiar</button>
-                                </div>
-                            </div>
+                    <!-- Select Intent / Template -->
+                    <div class="glass-panel p-4">
+                        <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-lightbulb mr-2"></i>2. Plantilla</label>
+                        <select id="msgIntentSelect" class="glass-input mb-3 text-sm" onchange="messagesModule.filterTemplates()">
+                            <option value="">-- Seleccionar Categoría --</option>
+                            <option value="Cambio de número">Avisar cambio de número</option>
+                            <option value="Impresoras">Impresoras</option>
+                            <option value="Computadoras y Laptops">Computadoras y Laptops</option>
+                            <option value="Cámaras y Redes">Cámaras y Redes</option>
+                            <option value="General">Soporte General / Otros</option>
+                        </select>
+                        <select id="msgTemplateSelect" class="glass-input text-sm" onchange="messagesModule.generatePreview()">
+                            <option value="">-- Seleccionar Plantilla --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Manual Service Override -->
+                    <div class="glass-panel p-4">
+                         <label class="block text-sm text-gold mb-2"><i class="fa-solid fa-tools mr-2"></i>3. Mención Especial (Opcional)</label>
+                         <select id="msgServiceSelect" class="glass-input text-sm" onchange="messagesModule.generatePreview()">
+                            <option value="">Usar servicio del contacto</option>
+                        </select>
+                    </div>
 
-                            <div class="flex-1 bg-[#0b141a] rounded-lg p-4 overflow-y-auto shadow-inner relative border border-white/5">
-                                <div class="bg-[#005c4b] text-white p-3 rounded-lg rounded-tr-none max-w-[90%] ml-auto text-sm shadow whitespace-pre-wrap font-sans relative" id="msgPreviewBox">
+                </div>
+
+                <!-- Right: Preview & Actions -->
+                <div class="w-full lg:w-7/12 flex flex-col gap-4 min-h-[450px] lg:min-h-0 lg:h-full flex-shrink-0">
+                    <div class="glass-panel p-3 lg:p-5 flex-1 flex flex-col relative overflow-hidden border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.05)]">
+                        <!-- WhatsApp Background pattern -->
+                        <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('https://w0.peakpx.com/wallpaper/818/148/HD-wallpaper-whatsapp-background-solid-color-dark.jpg'); background-size: cover;"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+                            <h3 class="font-semibold text-green-400 text-sm lg:text-base"><i class="fa-brands fa-whatsapp mr-2"></i>Vista Previa</h3>
+                            <button class="text-xs glass-button-secondary px-3 py-1.5 rounded shadow-sm" onclick="messagesModule.copyText()"><i class="fa-regular fa-copy"></i> Copiar</button>
+                        </div>
+
+                        <div class="flex-1 bg-[#0b141a] rounded-lg p-3 overflow-y-auto shadow-inner relative border border-white/5">
+                            <div class="bg-[#005c4b] text-white p-3 lg:p-4 rounded-lg rounded-tr-none max-w-[95%] lg:max-w-[85%] ml-auto text-[13px] lg:text-sm shadow whitespace-pre-wrap font-sans relative leading-relaxed" id="msgPreviewBox">
 Seleccione un contacto y una plantilla para generar el mensaje.
-                                </div>
                             </div>
-                            
-                            <div class="mt-4 pt-4 border-t border-white/10 flex flex-col sm:flex-row gap-3 justify-end relative z-10">
-                                <button class="glass-button-secondary rounded-lg px-4 py-2" onclick="messagesModule.markAsSentManually()" id="btnMarkSent" disabled>
-                                    <i class="fa-solid fa-check-double text-blue-400"></i> Registrar como enviado (sin abrir web)
-                                </button>
-                                <button class="glass-button bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-6 py-2 shadow-green-500/50 border-green-400/50" onclick="messagesModule.openWhatsApp()" id="btnOpenWhatsApp" disabled>
-                                    <i class="fa-brands fa-whatsapp text-lg mr-1"></i> Abrir WhatsApp y Enviar
-                                </button>
-                            </div>
+                        </div>
+                        
+                        <!-- BOTONES GIGANTES EN MÓVIL -->
+                        <div class="mt-4 pt-4 border-t border-white/10 flex flex-col-reverse lg:flex-row gap-3 justify-end relative z-10">
+                            <button class="glass-button-secondary rounded-lg px-4 py-3 lg:py-2 text-sm w-full lg:w-auto text-center" onclick="messagesModule.markAsSentManually()" id="btnMarkSent" disabled>
+                                <i class="fa-solid fa-check-double text-blue-400"></i> Solo registrar en historial
+                            </button>
+                            <button class="glass-button bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-6 py-4 lg:py-2 shadow-green-500/50 border-green-400/50 w-full lg:w-auto text-base lg:text-sm text-center flex items-center justify-center font-bold tracking-wide" onclick="messagesModule.openWhatsApp()" id="btnOpenWhatsApp" disabled>
+                                <i class="fa-brands fa-whatsapp text-2xl lg:text-xl mr-2"></i> ENVIAR WHATSAPP
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -526,9 +481,9 @@ Seleccione un contacto y una plantilla para generar el mensaje.
             <!-- VIEW: SERVICES -->
             <div id="view-services" class="hidden h-full flex flex-col">
                 <div class="glass-panel p-4 mb-4 flex-shrink-0 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gold">Gestión de Servicios</h3>
+                    <h3 class="text-lg font-semibold text-gold">Servicios</h3>
                     <button class="glass-button flex items-center gap-2 text-sm" onclick="servicesModule.openModal()">
-                        <i class="fa-solid fa-plus"></i> Nuevo Servicio
+                        <i class="fa-solid fa-plus"></i> Nuevo
                     </button>
                 </div>
                 <div class="glass-panel flex-1 overflow-auto">
@@ -536,14 +491,12 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                         <thead>
                             <tr>
                                 <th>Servicio</th>
-                                <th>Categoría</th>
+                                <th class="hidden sm:table-cell">Categoría</th>
                                 <th>Estado</th>
-                                <th class="text-right">Acciones</th>
+                                <th class="text-right">Edit</th>
                             </tr>
                         </thead>
-                        <tbody id="servicesTableBody">
-                            <!-- JS -->
-                        </tbody>
+                        <tbody id="servicesTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -551,25 +504,23 @@ Seleccione un contacto y una plantilla para generar el mensaje.
             <!-- VIEW: TEMPLATES -->
             <div id="view-templates" class="hidden h-full flex flex-col">
                 <div class="glass-panel p-4 mb-4 flex-shrink-0 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gold">Plantillas de Mensajes</h3>
+                    <h3 class="text-lg font-semibold text-gold">Plantillas</h3>
                     <button class="glass-button flex items-center gap-2 text-sm" onclick="templatesModule.openModal()">
-                        <i class="fa-solid fa-plus"></i> Nueva Plantilla
+                        <i class="fa-solid fa-plus"></i> Nueva
                     </button>
                 </div>
                 <div class="glass-panel flex-1 overflow-auto p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="templatesGrid">
-                        <!-- JS -->
-                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="templatesGrid"></div>
                 </div>
             </div>
 
             <!-- VIEW: HISTORY -->
             <div id="view-history" class="hidden h-full flex flex-col">
                 <div class="glass-panel p-4 mb-4 flex-shrink-0">
-                    <h3 class="text-lg font-semibold text-gold mb-3">Historial de Mensajes Enviados</h3>
-                    <div class="relative">
+                    <h3 class="text-lg font-semibold text-gold mb-3">Historial de Mensajes</h3>
+                    <div class="relative w-full lg:max-w-md">
                         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="searchHistory" placeholder="Buscar en historial..." class="glass-input pl-10 max-w-md text-sm" onkeyup="historyModule.filter()">
+                        <input type="text" id="searchHistory" placeholder="Buscar en historial..." class="glass-input pl-10 w-full text-sm" onkeyup="historyModule.filter()">
                     </div>
                 </div>
                 <div class="glass-panel flex-1 overflow-auto">
@@ -578,80 +529,78 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                             <tr>
                                 <th>Fecha/Hora</th>
                                 <th>Contacto</th>
-                                <th>WhatsApp</th>
+                                <th class="hidden sm:table-cell">WhatsApp</th>
                                 <th>Plantilla</th>
                             </tr>
                         </thead>
-                        <tbody id="historyTableBody">
-                            <!-- JS -->
-                        </tbody>
+                        <tbody id="historyTableBody"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- VIEW: CONFIG -->
             <div id="view-config" class="hidden h-full overflow-y-auto pb-10">
-                <div class="max-w-3xl mx-auto glass-panel p-8">
-                    <h2 class="text-2xl font-bold text-gold mb-6 border-b border-white/10 pb-4"><i class="fa-solid fa-gears mr-3"></i>Configuración General</h2>
+                <div class="max-w-3xl mx-auto glass-panel p-4 lg:p-8">
+                    <h2 class="text-xl lg:text-2xl font-bold text-gold mb-4 lg:mb-6 border-b border-white/10 pb-4"><i class="fa-solid fa-gears mr-3"></i>Configuración</h2>
                     
                     <form id="configForm" onsubmit="configModule.save(event)">
                         
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Datos del Negocio</h3>
+                        <div class="mb-6 lg:mb-8">
+                            <h3 class="text-base lg:text-lg font-semibold text-white mb-3 lg:mb-4 bg-white/5 p-2 rounded">Datos del Negocio</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Nombre del Negocio</label>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Nombre del Negocio</label>
                                     <input type="text" id="cfg_nombre_negocio" class="glass-input opacity-70 cursor-not-allowed" readonly required>
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Nombre del Responsable</label>
-                                    <input type="text" id="cfg_responsable" class="glass-input" required>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Nombre del Responsable</label>
+                                    <input type="text" id="cfg_responsable" class="glass-input text-sm" required>
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label class="block text-sm text-gray-400 mb-1">Firma en Mensajes</label>
-                                    <input type="text" id="cfg_firma" class="glass-input" placeholder="Ej: Atentamente, José - Soporte Técnico">
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Firma en Mensajes</label>
+                                    <input type="text" id="cfg_firma" class="glass-input text-sm" placeholder="Ej: Atentamente, José - Soporte Técnico">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">NúNúmeros de Contacto</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="mb-6 lg:mb-8">
+                            <h3 class="text-base lg:text-lg font-semibold text-white mb-3 lg:mb-4 bg-white/5 p-2 rounded">Números de Contacto</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-1 text-red-300">Número Anterior (A eliminar)</label>
-                                    <input type="text" id="cfg_numero_anterior" class="glass-input opacity-70 cursor-not-allowed" readonly placeholder="Ej: 51999888777">
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1 text-red-300">Anterior (Borrar)</label>
+                                    <input type="text" id="cfg_numero_anterior" class="glass-input opacity-70 cursor-not-allowed text-sm" readonly>
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-1 text-green-300">Nuevo Número Principal</label>
-                                    <input type="text" id="cfg_nuevo_numero_principal" class="glass-input opacity-70 cursor-not-allowed" readonly required>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1 text-green-300">Nuevo Principal</label>
+                                    <input type="text" id="cfg_nuevo_numero_principal" class="glass-input opacity-70 cursor-not-allowed text-sm" readonly required>
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Número Secundario</label>
-                                    <input type="text" id="cfg_nuevo_numero_secundario" class="glass-input">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Medios de Pago (Opcional)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Número Yape</label>
-                                    <input type="text" id="cfg_numero_yape" class="glass-input">
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Número Plin</label>
-                                    <input type="text" id="cfg_numero_plin" class="glass-input">
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-gray-400 mb-1">Cuenta Depósito</label>
-                                    <input type="text" id="cfg_numero_deposito" class="glass-input">
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Secundario</label>
+                                    <input type="text" id="cfg_nuevo_numero_secundario" class="glass-input text-sm">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
-                            <button type="submit" class="glass-button"><i class="fa-solid fa-save mr-2"></i>Guardar Configuración</button>
+                        <div class="mb-6 lg:mb-8">
+                            <h3 class="text-base lg:text-lg font-semibold text-white mb-3 lg:mb-4 bg-white/5 p-2 rounded">Pagos (Opcional)</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Número Yape</label>
+                                    <input type="text" id="cfg_numero_yape" class="glass-input text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Número Plin</label>
+                                    <input type="text" id="cfg_numero_plin" class="glass-input text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs lg:text-sm text-gray-400 mb-1">Cuenta Depósito</label>
+                                    <input type="text" id="cfg_numero_deposito" class="glass-input text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-white/10">
+                            <button type="submit" class="glass-button w-full sm:w-auto"><i class="fa-solid fa-save mr-2"></i>Guardar</button>
                         </div>
                     </form>
                 </div>
@@ -661,42 +610,41 @@ Seleccione un contacto y una plantilla para generar el mensaje.
     </main>
 
     <!-- MODAL: Contact Form -->
-    <div id="modalContact" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-white/10 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gold" id="modalContactTitle">Nuevo Contacto</h3>
-                <button onclick="contactsModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+    <div id="modalContact" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-lg sm:text-xl font-bold text-gold" id="modalContactTitle">Nuevo Contacto</h3>
+                <button onclick="contactsModule.closeModal()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto">
+            <div class="p-4 sm:p-6 overflow-y-auto">
                 <form id="formContact" onsubmit="contactsModule.save(event)">
                     <input type="hidden" id="c_id">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div><label class="block text-sm mb-1">Nombre</label><input type="text" id="c_nombre" class="glass-input" required></div>
-                        <div><label class="block text-sm mb-1">Apellido</label><input type="text" id="c_apellido" class="glass-input"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div><label class="block text-xs sm:text-sm mb-1">Nombre</label><input type="text" id="c_nombre" class="glass-input text-sm" required></div>
+                        <div><label class="block text-xs sm:text-sm mb-1">Apellido</label><input type="text" id="c_apellido" class="glass-input text-sm"></div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div><label class="block text-sm mb-1">WhatsApp Principal <span class="text-xs text-gray-400">(Cod. País)</span></label><input type="text" id="c_whatsapp" class="glass-input" placeholder="Ej: 51987654321" required></div>
-                        <div><label class="block text-sm mb-1">WhatsApp Secundario</label><input type="text" id="c_whatsapp2" class="glass-input"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div><label class="block text-xs sm:text-sm mb-1">WhatsApp Principal</label><input type="text" id="c_whatsapp" class="glass-input text-sm" placeholder="Ej: 51987654321" required></div>
+                        <div><label class="block text-xs sm:text-sm mb-1">WhatsApp Secundario</label><input type="text" id="c_whatsapp2" class="glass-input text-sm"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div><label class="block text-sm mb-1">Empresa / Organización</label><input type="text" id="c_empresa" class="glass-input"></div>
-                        <div><label class="block text-sm mb-1">Correo</label><input type="email" id="c_correo" class="glass-input"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div><label class="block text-xs sm:text-sm mb-1">Empresa</label><input type="text" id="c_empresa" class="glass-input text-sm"></div>
+                        <div><label class="block text-xs sm:text-sm mb-1">Correo</label><input type="email" id="c_correo" class="glass-input text-sm"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                         <div>
-                            <label class="block text-sm mb-1">Servicio de Interés</label>
-                            <select id="c_servicio" class="glass-input">
+                            <label class="block text-xs sm:text-sm mb-1">Servicio de Interés</label>
+                            <select id="c_servicio" class="glass-input text-sm">
                                 <option value="">Ninguno</option>
-                                <!-- JS -->
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm mb-1">Estado</label>
-                            <select id="c_estado" class="glass-input" required>
+                            <label class="block text-xs sm:text-sm mb-1">Estado</label>
+                            <select id="c_estado" class="glass-input text-sm" required>
                                 <option value="Nuevo">Nuevo</option>
                                 <option value="Contactado">Contactado</option>
                                 <option value="Pendiente">Pendiente</option>
@@ -709,13 +657,13 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     </div>
                     
                     <div class="mb-4">
-                        <label class="block text-sm mb-1">Notas / Observación</label>
-                        <textarea id="c_observacion" class="glass-input h-20"></textarea>
+                        <label class="block text-xs sm:text-sm mb-1">Notas</label>
+                        <textarea id="c_observacion" class="glass-input h-16 sm:h-20 text-sm"></textarea>
                     </div>
 
-                    <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="contactsModule.closeModal()">Cancelar</button>
-                        <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar Contacto</button>
+                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+                        <button type="button" class="glass-button-secondary px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto" onclick="contactsModule.closeModal()">Cancelar</button>
+                        <button type="submit" class="glass-button px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto">Guardar Contacto</button>
                     </div>
                 </form>
             </div>
@@ -727,14 +675,14 @@ Seleccione un contacto y una plantilla para generar el mensaje.
         <div class="glass-panel w-full max-w-md">
             <div class="p-4 border-b border-white/10 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gold" id="modalServiceTitle">Nuevo Servicio</h3>
-                <button onclick="servicesModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+                <button onclick="servicesModule.closeModal()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            <form id="formService" onsubmit="servicesModule.save(event)" class="p-6">
+            <form id="formService" onsubmit="servicesModule.save(event)" class="p-4 sm:p-6">
                 <input type="hidden" id="s_id">
-                <div class="mb-4"><label class="block text-sm mb-1">Nombre del Servicio</label><input type="text" id="s_nombre" class="glass-input" required></div>
+                <div class="mb-4"><label class="block text-sm mb-1">Nombre</label><input type="text" id="s_nombre" class="glass-input text-sm" required></div>
                 <div class="mb-4">
                     <label class="block text-sm mb-1">Categoría</label>
-                    <select id="s_categoria" class="glass-input" required>
+                    <select id="s_categoria" class="glass-input text-sm" required>
                         <option value="Impresoras">Impresoras</option>
                         <option value="Computadoras y Laptops">Computadoras y Laptops</option>
                         <option value="Cámaras">Cámaras</option>
@@ -746,34 +694,34 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm mb-1">Estado</label>
-                    <select id="s_estado" class="glass-input" required>
+                    <select id="s_estado" class="glass-input text-sm" required>
                         <option value="Activo">Activo</option>
                         <option value="Inactivo">Inactivo</option>
                     </select>
                 </div>
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="servicesModule.closeModal()">Cancelar</button>
-                    <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar</button>
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                    <button type="button" class="glass-button-secondary px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto" onclick="servicesModule.closeModal()">Cancelar</button>
+                    <button type="submit" class="glass-button px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL: Template Form -->
-    <div id="modalTemplate" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-white/10 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gold" id="modalTemplateTitle">Editar Plantilla</h3>
-                <button onclick="templatesModule.closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+    <div id="modalTemplate" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-panel w-full max-w-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-lg sm:text-xl font-bold text-gold" id="modalTemplateTitle">Editar Plantilla</h3>
+                <button onclick="templatesModule.closeModal()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            <form id="formTemplate" onsubmit="templatesModule.save(event)" class="p-6 overflow-y-auto flex-1">
+            <form id="formTemplate" onsubmit="templatesModule.save(event)" class="p-4 sm:p-6 overflow-y-auto flex-1">
                 <input type="hidden" id="t_id">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div><label class="block text-sm mb-1">Nombre de Plantilla (Interno)</label><input type="text" id="t_nombre" class="glass-input" required></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <div><label class="block text-xs sm:text-sm mb-1">Nombre (Interno)</label><input type="text" id="t_nombre" class="glass-input text-sm" required></div>
                     <div>
-                        <label class="block text-sm mb-1">Categoría / Tipo</label>
-                        <select id="t_categoria" class="glass-input" required>
+                        <label class="block text-xs sm:text-sm mb-1">Categoría</label>
+                        <select id="t_categoria" class="glass-input text-sm" required>
                             <option value="Cambio de número">Cambio de número</option>
                             <option value="Impresoras">Impresoras</option>
                             <option value="Computadoras y Laptops">Computadoras y Laptops</option>
@@ -784,23 +732,22 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 </div>
 
                 <div class="mb-2">
-                    <label class="block text-sm mb-1 text-gold">Contenido del Mensaje</label>
-                    <div class="text-xs text-gray-400 mb-2 flex flex-wrap gap-2">
-                        <span>Variables:</span>
+                    <label class="block text-xs sm:text-sm mb-1 text-gold">Contenido del Mensaje</label>
+                    <div class="text-[10px] sm:text-xs text-gray-400 mb-2 flex flex-wrap gap-1 sm:gap-2">
+                        <span>Var:</span>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nombre_contacto]')">[nombre_contacto]</code>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[servicio]')">[servicio]</code>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nombre_negocio]')">[nombre_negocio]</code>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[nuevo_numero_principal]')">[nuevo_numero_principal]</code>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[numero_anterior]')">[numero_anterior]</code>
                         <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[firma]')">[firma]</code>
-                        <code class="bg-white/10 px-1 rounded cursor-pointer hover:bg-white/20" onclick="templatesModule.insertVar('[numero_yape]')">[numero_yape]</code>
                     </div>
-                    <textarea id="t_contenido" class="glass-input h-64 font-sans" required></textarea>
+                    <textarea id="t_contenido" class="glass-input h-48 sm:h-64 font-sans text-sm" required></textarea>
                 </div>
 
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" class="glass-button-secondary px-4 py-2 rounded-lg" onclick="templatesModule.closeModal()">Cancelar</button>
-                    <button type="submit" class="glass-button px-4 py-2 rounded-lg">Guardar Plantilla</button>
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+                    <button type="button" class="glass-button-secondary px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto" onclick="templatesModule.closeModal()">Cancelar</button>
+                    <button type="submit" class="glass-button px-4 py-3 sm:py-2 rounded-lg text-sm w-full sm:w-auto">Guardar</button>
                 </div>
             </form>
         </div>
@@ -813,7 +760,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
          * CONFIGURACIÓN PRINCIPAL
          * ==========================================
          */
-        // ¡LA URL REAL HA SIDO ASIGNADA AQUÍ!
+        // URL DE GOOGLE APPS SCRIPT - NO TOCAR, CONEXIÓN VERIFICADA
         const API_URL = "https://script.google.com/macros/s/AKfycbzaLWS1RTSmataZdRCFU690x4M_yKGI_y1XfhWOSdsz6WDAW3lojbZ1iBUIpzFyd2W7/exec"; 
 
         /**
@@ -844,8 +791,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 {id: 'C1', nombre: 'Juan', apellido: 'Pérez', nombre_completo: 'Juan Pérez', whatsapp_principal: '51987123456', correo: 'juan@mail.com', empresa: '', servicio_id: 'S1', estado_contacto: 'Nuevo', fecha_registro: new Date().toISOString()}
             ],
             templates: [
-                {id: 'T1', nombre_plantilla: 'Cambio Num - Formal', categoria: 'Cambio de número', contenido: 'Hola, [nombre_contacto] 😊\nLe saluda [nombre_negocio].\nQueremos informarle que hemos cambiado nuestro número oficial de atención.\nDesde ahora puede comunicarse con nosotros a este nuevo número:\n*[nuevo_numero_principal]*\n\nPor favor, elimine de sus contactos el número anterior:\n~[numero_anterior]~\n\nAsí podremos seguir atendiéndole correctamente por WhatsApp.\n[firma]'},
-                {id: 'T2', nombre_plantilla: 'Impresoras - Falla', categoria: 'Impresoras', contenido: 'Hola, [nombre_contacto] 😊\nLe saluda [nombre_negocio].\nEstamos brindando servicio de *[servicio]*, ideal si su impresora presenta fallas, manchas, atascos, errores o problemas de tinta.\n\nTambién le informamos que nuestro nuevo número de atención es:\n*[nuevo_numero_principal]*\n(Por favor, elimine el número anterior: ~[numero_anterior]~)\n\nPuede escribirnos para coordinar una revisión.\n[firma]'}
+                {id: 'T1', nombre_plantilla: 'Cambio Num - Formal', categoria: 'Cambio de número', contenido: 'Hola, [nombre_contacto] 😊\nLe saluda [nombre_negocio].\nQueremos informarle que hemos cambiado nuestro número oficial de atención.\nDesde ahora puede comunicarse con nosotros a este nuevo número:\n*[nuevo_numero_principal]*\n\nPor favor, elimine de sus contactos el número anterior:\n~[numero_anterior]~\n\nAsí podremos seguir atendiéndole correctamente por WhatsApp.\n[firma]'}
             ],
             history: []
         };
@@ -895,7 +841,17 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 } catch (error) {
                     hideLoader();
                     console.error("API Error:", error);
-                    Swal.fire('Error', error.message, 'error');
+                    let msg = error.message;
+                    // Trampa de error amigable por si Google bloquea la conexión por falta de permisos
+                    if(msg.includes('JSON') || msg.includes('Failed to fetch') || msg.includes('Unexpected token')) {
+                        msg = "La aplicación no pudo conectar a tu Base de Datos. <br><br><b>SOLUCIÓN:</b><br>1. Ve a tu Google Apps Script.<br>2. Clic en 'Implementar' > 'Gestionar implementaciones'.<br>3. Clic en el Lápiz (Editar).<br>4. En 'Quién tiene acceso' debes seleccionar obligatoriamente <b>'Cualquier persona'</b>.<br>5. Clic en Implementar.";
+                    }
+                    Swal.fire({
+                        title: 'Error de Conexión', 
+                        html: msg, 
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
                     throw error;
                 }
             },
@@ -949,7 +905,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                         }
                         hideLoader();
                         resolve(resData);
-                    }, 500); // 500ms delay para simular red
+                    }, 500);
                 });
             }
         };
@@ -994,13 +950,28 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 templates: [],
                 selectedContactForMsg: null
             },
+            sidebarOpen: false,
+            
+            toggleSidebar() {
+                this.sidebarOpen = !this.sidebarOpen;
+                const sidebar = document.getElementById('mainSidebar');
+                const backdrop = document.getElementById('sidebarBackdrop');
+                if(this.sidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full');
+                    backdrop.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                }
+            },
+            
             async init() {
                 // Set UI based on mode
                 if(isMockMode) {
-                    document.getElementById('modeLabel').innerText = "Demo Local (Sin Guardar en Nube)";
+                    document.getElementById('modeLabel').innerText = "Demo Local (Sin Guardar)";
                     document.getElementById('connectionStatus').classList.replace('bg-green-500', 'bg-yellow-500');
                 } else {
-                    document.getElementById('modeLabel').innerText = "Producción (Google Sheets)";
+                    document.getElementById('modeLabel').innerText = "Producción";
                     document.getElementById('connectionStatus').classList.replace('bg-yellow-500', 'bg-green-500');
                 }
 
@@ -1008,6 +979,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 await this.loadBaseData();
                 this.navigate('dashboard');
             },
+            
             async loadBaseData() {
                 this.state.config = await api.call('getConfig') || {};
                 this.state.services = await api.call('getServices') || [];
@@ -1017,23 +989,32 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     document.getElementById('headerBusinessName').innerText = this.state.config.nombre_negocio;
                 }
             },
+            
             navigate(viewId) {
-                // Ocultar todas las vistas
-                document.querySelectorAll('main > div > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+                // Cerrar sidebar en móvil si está abierto
+                if(window.innerWidth < 768 && this.sidebarOpen) {
+                    this.toggleSidebar();
+                }
+
+                // Ocultar todas las vistas correctamente sin romper el "flex" de Tailwind
+                document.querySelectorAll('main > div > div[id^="view-"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+                
                 // Mostrar solicitada
-                document.getElementById(`view-${viewId}`).classList.remove('hidden');
-                document.getElementById('view-'+viewId).classList.add('flex'); // Mantiene flex si lo necesita
+                const viewEl = document.getElementById(`view-${viewId}`);
+                viewEl.classList.remove('hidden');
 
                 // Actualizar menu activo
                 document.querySelectorAll('#mainNav a').forEach(a => a.classList.remove('active'));
-                event && event.currentTarget ? event.currentTarget.classList.add('active') : null;
+                if(event && event.currentTarget) event.currentTarget.classList.add('active');
 
                 // Títulos
                 const titles = {
-                    'dashboard': 'Dashboard General', 'import': 'Importar Contactos',
-                    'contacts': 'Gestión de Contactos', 'messages': 'Generador de Mensajes IA',
-                    'services': 'Catálogo de Servicios', 'templates': 'Plantillas Inteligentes',
-                    'history': 'Historial de Envíos', 'config': 'Configuración del Sistema'
+                    'dashboard': 'Dashboard', 'import': 'Importar Contactos',
+                    'contacts': 'Gestión de Contactos', 'messages': 'Generar Mensaje',
+                    'services': 'Servicios', 'templates': 'Plantillas',
+                    'history': 'Historial de Envíos', 'config': 'Configuración'
                 };
                 document.getElementById('pageTitle').innerText = titles[viewId] || 'CRM';
 
@@ -1061,7 +1042,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
 
                 // Tablas
                 const tContacts = document.getElementById('dashRecentContactsTable');
-                tContacts.innerHTML = data.recentContacts.length ? data.recentContacts.map(c => `
+                tContacts.innerHTML = data.recentContacts && data.recentContacts.length ? data.recentContacts.map(c => `
                     <tr>
                         <td class="font-medium">${c.nombre_completo || 'Sin nombre'}</td>
                         <td class="text-gray-400">${c.whatsapp_principal || '-'}</td>
@@ -1070,7 +1051,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 `).join('') : '<tr><td colspan="3" class="text-center text-gray-500 py-4">Sin datos</td></tr>';
 
                 const tMsgs = document.getElementById('dashRecentMessagesTable');
-                tMsgs.innerHTML = data.recentMessages.length ? data.recentMessages.map(m => `
+                tMsgs.innerHTML = data.recentMessages && data.recentMessages.length ? data.recentMessages.map(m => `
                     <tr>
                         <td class="font-medium">${m.nombre_contacto}</td>
                         <td class="text-gray-400 text-sm">${m.tipo_mensaje}</td>
@@ -1156,7 +1137,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     <tr>
                         <td>${c.nombre_completo}</td>
                         <td class="${c.whatsapp_principal ? 'text-green-400' : 'text-red-400'}">${c.whatsapp_principal || 'No tiene'}</td>
-                        <td class="text-gray-400">${c.empresa || '-'}</td>
+                        <td class="text-gray-400 hidden sm:table-cell">${c.empresa || '-'}</td>
                         <td>${c.whatsapp_principal ? '<span class="text-green-400 text-xs"><i class="fa-solid fa-check"></i> Listo</span>' : '<span class="text-red-400 text-xs"><i class="fa-solid fa-xmark"></i> Sin Num</span>'}</td>
                     </tr>
                 `).join('');
@@ -1167,10 +1148,9 @@ Seleccione un contacto y una plantilla para generar el mensaje.
             async processImport() {
                 if(this.parsedData.length === 0) return;
                 
-                // En un sistema real, la verificación de duplicados se hace en el backend.
                 try {
                     const res = await api.call('importContacts', this.parsedData);
-                    Swal.fire('Éxito', `Se importaron/actualizaron ${res.imported} contactos correctamente.`, 'success');
+                    Swal.fire('Éxito', `Se procesaron ${res.imported} contactos correctamente.`, 'success');
                     // Reset
                     this.parsedData = [];
                     document.getElementById('importPreviewContainer').classList.add('hidden');
@@ -1201,7 +1181,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 // Poblar select de servicios en modal y filtros
                 const serviceOptions = app.state.services.filter(s=>s.estado==='Activo').map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
                 document.getElementById('c_servicio').innerHTML = '<option value="">Ninguno</option>' + serviceOptions;
-                document.getElementById('filterService').innerHTML = '<option value="">Cualquier Servicio</option>' + serviceOptions;
+                document.getElementById('filterService').innerHTML = '<option value="">Servicios</option>' + serviceOptions;
             },
             render() {
                 const tbody = document.getElementById('contactsTableBody');
@@ -1210,7 +1190,6 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     return;
                 }
                 
-                // Aplicar filtros locales para la UI
                 const search = document.getElementById('searchContacts').value.toLowerCase();
                 const state = document.getElementById('filterState').value;
                 const service = document.getElementById('filterService').value;
@@ -1224,22 +1203,21 @@ Seleccione un contacto y una plantilla para generar el mensaje.
 
                 tbody.innerHTML = filtered.map(c => {
                     const srv = app.state.services.find(s => s.id === c.servicio_id);
-                    const srvName = srv ? srv.nombre : '<span class="text-gray-600">Sin asignar</span>';
+                    const srvName = srv ? srv.nombre : '<span class="text-gray-600">Ninguno</span>';
                     return `
                     <tr>
                         <td>
-                            <div class="font-medium">${c.nombre_completo || 'Sin Nombre'}</div>
-                            <div class="text-xs text-gray-400">${c.empresa || ''}</div>
+                            <div class="font-medium truncate max-w-[120px] lg:max-w-none">${c.nombre_completo || 'Sin Nombre'}</div>
+                            <div class="text-[10px] lg:text-xs text-gray-400 truncate max-w-[120px] lg:max-w-none">${c.empresa || ''}</div>
                         </td>
                         <td>
                             <div class="text-green-400 font-medium">${c.whatsapp_principal || '-'}</div>
-                            ${c.whatsapp_secundario ? `<div class="text-xs text-gray-500">${c.whatsapp_secundario} (alt)</div>` : ''}
                         </td>
-                        <td class="text-sm">${srvName}</td>
-                        <td>${getStatusBadge(c.estado_contacto)}</td>
+                        <td class="text-sm hidden md:table-cell truncate max-w-[120px]">${srvName}</td>
+                        <td class="hidden sm:table-cell">${getStatusBadge(c.estado_contacto)}</td>
                         <td class="text-right whitespace-nowrap">
-                            <button onclick="contactsModule.gotoMessage('${c.id}')" class="text-green-400 hover:text-green-300 mx-1 tooltip" title="Enviar Mensaje"><i class="fa-brands fa-whatsapp text-lg"></i></button>
-                            <button onclick="contactsModule.edit('${c.id}')" class="text-blue-400 hover:text-blue-300 mx-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="contactsModule.gotoMessage('${c.id}')" class="text-green-400 hover:text-green-300 mx-1 p-2 bg-white/5 rounded-lg" title="Enviar Mensaje"><i class="fa-brands fa-whatsapp text-lg lg:text-xl"></i></button>
+                            <button onclick="contactsModule.edit('${c.id}')" class="text-blue-400 hover:text-blue-300 mx-1 p-2 bg-white/5 rounded-lg"><i class="fa-solid fa-pen"></i></button>
                         </td>
                     </tr>
                 `}).join('');
@@ -1332,6 +1310,12 @@ Seleccione un contacto y una plantilla para generar el mensaje.
             },
             gotoMessage(id) {
                 app.state.selectedContactForMsg = app.state.contacts.find(x => x.id === id);
+                
+                // Activar link en menú
+                document.querySelectorAll('#mainNav a').forEach(a => a.classList.remove('active'));
+                const messageLink = Array.from(document.querySelectorAll('#mainNav a')).find(a => a.innerText.includes('Generar Mensaje'));
+                if(messageLink) messageLink.classList.add('active');
+
                 app.navigate('messages');
             }
         };
@@ -1347,10 +1331,10 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 tbody.innerHTML = app.state.services.map(s => `
                     <tr>
                         <td class="font-medium">${s.nombre}</td>
-                        <td class="text-sm text-gray-400">${s.categoria}</td>
+                        <td class="text-sm text-gray-400 hidden sm:table-cell">${s.categoria}</td>
                         <td>${getStatusBadge(s.estado)}</td>
                         <td class="text-right">
-                            <button onclick="servicesModule.edit('${s.id}')" class="text-blue-400 hover:text-blue-300"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="servicesModule.edit('${s.id}')" class="text-blue-400 hover:text-blue-300 p-2 bg-white/5 rounded-lg"><i class="fa-solid fa-pen"></i></button>
                         </td>
                     </tr>
                 `).join('');
@@ -1400,7 +1384,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     <div class="glass-panel p-4 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <h4 class="font-bold text-white text-sm">${t.nombre_plantilla}</h4>
-                            <button onclick="templatesModule.edit('${t.id}')" class="text-blue-400 text-xs"><i class="fa-solid fa-pen"></i> Editar</button>
+                            <button onclick="templatesModule.edit('${t.id}')" class="text-blue-400 text-xs bg-white/5 p-1 px-2 rounded hover:bg-white/10"><i class="fa-solid fa-pen"></i> Editar</button>
                         </div>
                         <span class="text-[10px] bg-white/10 px-2 py-1 rounded inline-block w-max mb-2 text-gold">${t.categoria}</span>
                         <p class="text-xs text-gray-400 flex-1 overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">${t.contenido.replace(/\n/g, '<br>')}</p>
@@ -1466,7 +1450,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 
                 // Poblar select de servicios manuales
                 const serviceOptions = app.state.services.filter(s=>s.estado==='Activo').map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
-                document.getElementById('msgServiceSelect').innerHTML = '<option value="">Usar servicio asignado al contacto</option>' + serviceOptions;
+                document.getElementById('msgServiceSelect').innerHTML = '<option value="">Usar servicio del contacto</option>' + serviceOptions;
             },
             filterContactsDropdown() {
                 const search = document.getElementById('msgSearchContact').value.toLowerCase();
@@ -1477,7 +1461,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 const matches = app.state.contacts.filter(c => 
                     (c.nombre_completo||'').toLowerCase().includes(search) || 
                     (c.whatsapp_principal||'').includes(search)
-                ).slice(0, 10); // Max 10 results
+                ).slice(0, 10); 
 
                 if(matches.length > 0) {
                     dropdown.innerHTML = matches.map(c => `
@@ -1530,7 +1514,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 document.getElementById('msgSelectedContactCard').classList.add('hidden');
                 document.getElementById('msgSearchContact').classList.remove('hidden');
                 document.getElementById('msgSearchContact').value = '';
-                document.getElementById('msgPreviewBox').innerText = "Seleccione un contacto y una plantilla.";
+                document.getElementById('msgPreviewBox').innerText = "Seleccione un contacto y una plantilla para generar el mensaje.";
                 document.getElementById('btnOpenWhatsApp').disabled = true;
                 document.getElementById('btnMarkSent').disabled = true;
                 this.currentMsgText = '';
@@ -1580,8 +1564,6 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 }
 
                 // Reemplazo de variables
-                const defaultGreeting = contact.nombre ? contact.nombre : "Hola 😊";
-                
                 text = text.replace(/\[nombre_contacto\]/g, contact.nombre || 'Cliente');
                 text = text.replace(/\[apellido_contacto\]/g, contact.apellido || '');
                 text = text.replace(/\[nombre_completo_contacto\]/g, contact.nombre_completo || 'Cliente');
@@ -1599,7 +1581,6 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 text = text.replace(/\[numero_deposito\]/g, cfg.numero_deposito || '');
                 text = text.replace(/\[firma\]/g, cfg.firma || '');
 
-                // Regla: Si no hay nombre, arreglar saludos feos
                 if(!contact.nombre) {
                     text = text.replace("Hola, Cliente 😊", "Hola 😊");
                     text = text.replace("Buen día, Cliente", "Buen día");
@@ -1618,6 +1599,14 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 
                 btnWhats.disabled = false;
                 btnMark.disabled = false;
+                
+                // Hacer scroll suave hacia abajo en móvil para ver el mensaje
+                if(window.innerWidth < 1024) {
+                    document.getElementById('view-messages').scrollTo({
+                        top: document.getElementById('view-messages').scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
             },
             copyText() {
                 if(!this.currentMsgText) return;
@@ -1635,7 +1624,6 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 
                 window.open(url, '_blank');
                 
-                // Auto registrar en historial
                 this.markAsSent(true);
             },
             async markAsSentManually() {
@@ -1653,7 +1641,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     id_contacto: contact.id,
                     nombre_contacto: contact.nombre_completo,
                     whatsapp_contacto: contact.whatsapp_principal,
-                    servicio: document.getElementById('msgCardService').innerText, // lo que diga la UI
+                    servicio: document.getElementById('msgCardService').innerText,
                     tipo_mensaje: template.categoria,
                     plantilla_usada: template.nombre_plantilla,
                     mensaje_enviado: this.currentMsgText,
@@ -1664,7 +1652,6 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                 try {
                     await api.call('saveHistory', data);
                     
-                    // Actualizar estado del contacto si era "Nuevo" a "Contactado"
                     if(contact.estado_contacto === 'Nuevo' || contact.estado_contacto === 'Pendiente') {
                         contact.estado_contacto = 'Contactado';
                         await api.call('saveContact', contact);
@@ -1696,12 +1683,12 @@ Seleccione un contacto y una plantilla para generar el mensaje.
 
                 tbody.innerHTML = filtered.map(h => `
                     <tr>
-                        <td class="text-sm text-gray-400 whitespace-nowrap">${h.fecha_hora.split(',')[0]} <br> <span class="text-xs">${h.fecha_hora.split(',')[1]||''}</span></td>
-                        <td class="font-medium">${h.nombre_contacto}</td>
-                        <td class="text-green-400 text-sm">${h.whatsapp_contacto}</td>
+                        <td class="text-xs lg:text-sm text-gray-400 whitespace-nowrap">${h.fecha_hora.split(',')[0]} <br> <span class="text-[10px] lg:text-xs">${h.fecha_hora.split(',')[1]||''}</span></td>
+                        <td class="font-medium text-sm lg:text-base">${h.nombre_contacto}</td>
+                        <td class="text-green-400 text-sm hidden sm:table-cell">${h.whatsapp_contacto}</td>
                         <td>
-                            <div class="text-sm">${h.plantilla_usada}</div>
-                            <div class="text-xs text-gray-500">${h.estado_mensaje}</div>
+                            <div class="text-sm lg:text-base">${h.plantilla_usada}</div>
+                            <div class="text-[10px] lg:text-xs text-gray-500">${h.estado_mensaje}</div>
                         </td>
                     </tr>
                 `).join('');
