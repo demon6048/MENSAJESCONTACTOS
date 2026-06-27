@@ -383,11 +383,11 @@
                         <table class="glass-table w-full">
                             <thead>
                                 <tr>
-                                    <th>Contacto</th>
-                                    <th>WhatsApp</th>
+                                    <th class="w-full">Contacto</th>
+                                    <th class="whitespace-nowrap">WhatsApp</th>
                                     <th class="hidden md:table-cell">Servicio</th>
                                     <th class="hidden sm:table-cell">Estado</th>
-                                    <th class="text-right">Acción</th>
+                                    <th class="text-right whitespace-nowrap w-1">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="contactsTableBody">
@@ -760,8 +760,8 @@ Seleccione un contacto y una plantilla para generar el mensaje.
          * CONFIGURACIÓN PRINCIPAL
          * ==========================================
          */
-        // URL DE GOOGLE APPS SCRIPT - NO TOCAR, CONEXIÓN VERIFICADA
-        const API_URL = "https://script.google.com/macros/s/AKfycbzaLWS1RTSmataZdRCFU690x4M_yKGI_y1XfhWOSdsz6WDAW3lojbZ1iBUIpzFyd2W7/exec"; 
+        // URL DE GOOGLE APPS SCRIPT - ACTUALIZADA
+        const API_URL = "https://script.google.com/macros/s/AKfycbzg9kRx_QMQ4bJe7IEjHjMogsox-v6dwK3I94OuDK6t0JMM_Fu5zEk3_iFmNp-9Ul11/exec"; 
 
         /**
          * ==========================================
@@ -1206,18 +1206,20 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                     const srvName = srv ? srv.nombre : '<span class="text-gray-600">Ninguno</span>';
                     return `
                     <tr>
-                        <td>
-                            <div class="font-medium truncate max-w-[120px] lg:max-w-none">${c.nombre_completo || 'Sin Nombre'}</div>
-                            <div class="text-[10px] lg:text-xs text-gray-400 truncate max-w-[120px] lg:max-w-none">${c.empresa || ''}</div>
+                        <td class="w-full">
+                            <div class="font-medium truncate max-w-[130px] sm:max-w-none">${c.nombre_completo || 'Sin Nombre'}</div>
+                            <div class="text-[10px] lg:text-xs text-gray-400 truncate max-w-[130px] sm:max-w-none">${c.empresa || ''}</div>
                         </td>
-                        <td>
-                            <div class="text-green-400 font-medium">${c.whatsapp_principal || '-'}</div>
+                        <td class="whitespace-nowrap">
+                            <div class="text-green-400 font-medium text-xs sm:text-sm">${c.whatsapp_principal || '-'}</div>
                         </td>
                         <td class="text-sm hidden md:table-cell truncate max-w-[120px]">${srvName}</td>
                         <td class="hidden sm:table-cell">${getStatusBadge(c.estado_contacto)}</td>
-                        <td class="text-right whitespace-nowrap">
-                            <button onclick="contactsModule.gotoMessage('${c.id}')" class="text-green-400 hover:text-green-300 mx-1 p-2 bg-white/5 rounded-lg" title="Enviar Mensaje"><i class="fa-brands fa-whatsapp text-lg lg:text-xl"></i></button>
-                            <button onclick="contactsModule.edit('${c.id}')" class="text-blue-400 hover:text-blue-300 mx-1 p-2 bg-white/5 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+                        <td class="text-right whitespace-nowrap w-1">
+                            <div class="flex justify-end items-center gap-1 sm:gap-2">
+                                <button onclick="contactsModule.gotoMessage('${c.id}')" class="text-green-400 hover:text-green-300 p-1.5 sm:p-2 bg-white/5 rounded-lg flex items-center justify-center" title="Enviar Mensaje"><i class="fa-brands fa-whatsapp text-lg lg:text-xl"></i></button>
+                                <button onclick="contactsModule.edit('${c.id}')" class="text-blue-400 hover:text-blue-300 p-1.5 sm:p-2 bg-white/5 rounded-lg flex items-center justify-center"><i class="fa-solid fa-pen text-sm lg:text-base"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `}).join('');
