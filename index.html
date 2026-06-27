@@ -615,7 +615,7 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                         </div>
 
                         <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">Números de Contacto</h3>
+                            <h3 class="text-lg font-semibold text-white mb-4 bg-white/5 p-2 rounded">NúNúmeros de Contacto</h3>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-sm text-gray-400 mb-1 text-red-300">Número Anterior (A eliminar)</label>
@@ -870,8 +870,27 @@ Seleccione un contacto y una plantilla para generar el mensaje.
                         });
                         const result = await response.json();
                         if(result.status !== 'success') throw new Error(result.message || 'Error de API');
+                        
+                        let resData = result.data;
+                        
+                        // Normalizar IDs de la base de datos real (Google Sheets) al formato del frontend
+                        if (resData && Array.isArray(resData)) {
+                            resData = resData.map(item => {
+                                if (item.id_contacto && !item.id) item.id = item.id_contacto;
+                                if (item.id_servicio && !item.id) item.id = item.id_servicio;
+                                if (item.id_plantilla && !item.id) item.id = item.id_plantilla;
+                                if (item.id_historial && !item.id) item.id = item.id_historial;
+                                if (item.nombre_servicio && !item.nombre) item.nombre = item.nombre_servicio;
+                                return item;
+                            });
+                        } else if (resData && typeof resData === 'object' && action === 'getDashboard') {
+                            if (resData.recentContacts) {
+                                resData.recentContacts.forEach(c => { if(c.id_contacto) c.id = c.id_contacto; });
+                            }
+                        }
+                        
                         hideLoader();
-                        return result.data;
+                        return resData;
                     }
                 } catch (error) {
                     hideLoader();
